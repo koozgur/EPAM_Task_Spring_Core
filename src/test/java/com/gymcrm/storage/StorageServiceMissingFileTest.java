@@ -1,6 +1,9 @@
 package com.gymcrm.storage;
 
 import com.gymcrm.config.AppConfig;
+import com.gymcrm.model.Trainee;
+import com.gymcrm.model.Trainer;
+import com.gymcrm.model.Training;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -62,11 +65,28 @@ class StorageServiceMissingFileTest {
         Long trainerId = storageService.generateTrainerId();
         Long trainingId = storageService.generateTrainingId();
 
+        Trainee trainee = new Trainee();
+        trainee.setId(traineeId);
+        trainee.setFirstName("Test");
+        trainee.setLastName("Trainee");
+
+        Trainer trainer = new Trainer();
+        trainer.setId(trainerId);
+        trainer.setFirstName("Test");
+        trainer.setLastName("Trainer");
+        trainer.setSpecialization("Fitness");
+
+        Training training = new Training();
+        training.setId(trainingId);
+        training.setTraineeId(traineeId);
+        training.setTrainerId(trainerId);
+        training.setTrainingName("Test Session");
+
         // Act & Assert - Should be able to use storage normally
         assertDoesNotThrow(() -> {
-            storageService.getTraineeStorage().put(traineeId, null);
-            storageService.getTrainerStorage().put(trainerId, null);
-            storageService.getTrainingStorage().put(trainingId, null);
+            storageService.getTraineeStorage().put(traineeId, trainee);
+            storageService.getTrainerStorage().put(trainerId, trainer);
+            storageService.getTrainingStorage().put(trainingId, training);
         });
 
         assertEquals(1, storageService.getTraineeStorage().size());

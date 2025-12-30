@@ -65,6 +65,12 @@
             <version>3.24.2</version>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-test</artifactId>
+            <version>5.3.30</version>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <build>

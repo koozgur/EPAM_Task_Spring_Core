@@ -1,0 +1,11 @@
+# Compiled class files
+*.class
+
+# IntelliJ IDEA
+.idea/
+
+# Application logs
+logs/
+*.log.*
+
+target/

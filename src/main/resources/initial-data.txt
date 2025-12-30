@@ -1,0 +1,32 @@
+# GYM CRM - Initial Data File
+# Format: CSV-style data for each entity type
+# Sections: [TRAINEES], [TRAINERS], [TRAININGS]
+
+[TRAINEES]
+# Format: firstName,lastName,dateOfBirth,address,isActive
+John,Doe,1990-05-15,123 Main St New York,true
+Jane,Smith,1992-08-22,456 Oak Ave Los Angeles,true
+Michael,Johnson,1988-03-10,789 Pine Rd Chicago,true
+Emily,Williams,1995-11-30,321 Elm St Houston,false
+David,Brown,1991-07-18,654 Maple Dr Phoenix,true
+
+[TRAINERS]
+# Format: firstName,lastName,specialization,isActive
+Sarah,Connor,Fitness,true
+Arnold,Schwarzenegger,Bodybuilding,true
+Tony,Stark,Cardio,true
+Bruce,Lee,Martial Arts,true
+Linda,Hamilton,Yoga,false
+
+[TRAININGS]
+# Format: traineeId,trainerId,trainingName,trainingType,trainingDate,trainingDuration
+1,1,Morning Cardio,Cardio,2025-01-05,60
+1,2,Strength Training,Bodybuilding,2025-01-06,90
+2,1,Evening Fitness,Fitness,2025-01-05,45
+2,3,HIIT Session,Cardio,2025-01-07,30
+3,4,Martial Arts Basics,Martial Arts,2025-01-08,120
+3,1,Full Body Workout,Fitness,2025-01-09,75
+4,5,Yoga Flow,Yoga,2025-01-10,60
+5,2,Power Lifting,Bodybuilding,2025-01-11,90
+5,3,Sprint Training,Cardio,2025-01-12,45
+1,4,Self Defense,Martial Arts,2025-01-13,90

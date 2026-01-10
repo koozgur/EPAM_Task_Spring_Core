@@ -37,32 +37,32 @@ public class TraineeDAOImpl implements TraineeDAO {
         logger.debug("Creating trainee: {}", trainee);
 
         //TODO:check the requirements for whether we can get id from outside or not
-        if (trainee.getId() == null) {
-            trainee.setId(storageService.generateTraineeId());
+        if (trainee.getUserId() == null) {
+            trainee.setUserId(storageService.generateTraineeId());
         }
         
-        storageService.getTraineeStorage().put(trainee.getId(), trainee);
-        logger.debug("Trainee created with ID: {}", trainee.getId());
+        storageService.getTraineeStorage().put(trainee.getUserId(), trainee);
+        logger.debug("Trainee created with ID: {}", trainee.getUserId());
         
         return trainee;
     }
     
     @Override
     public Trainee update(Trainee trainee) {
-        logger.debug("Updating trainee with ID: {}", trainee.getId());
+        logger.debug("Updating trainee with ID: {}", trainee.getUserId());
         
-        if (trainee.getId() == null) {
+        if (trainee.getUserId() == null) {
             logger.error("Cannot update trainee without ID");
             throw new IllegalArgumentException("Trainee ID cannot be null for update operation");
         }
         
-        if (!storageService.getTraineeStorage().containsKey(trainee.getId())) {
-            logger.error("Trainee not found with ID: {}", trainee.getId());
-            throw new IllegalArgumentException("Trainee not found with ID: " + trainee.getId());
+        if (!storageService.getTraineeStorage().containsKey(trainee.getUserId())) {
+            logger.error("Trainee not found with ID: {}", trainee.getUserId());
+            throw new IllegalArgumentException("Trainee not found with ID: " + trainee.getUserId());
         }
         
-        storageService.getTraineeStorage().put(trainee.getId(), trainee);
-        logger.debug("Trainee updated: {}", trainee.getId());
+        storageService.getTraineeStorage().put(trainee.getUserId(), trainee);
+        logger.debug("Trainee updated: {}", trainee.getUserId());
         
         return trainee;
     }

@@ -43,7 +43,7 @@ public class DataParser {
         Boolean isActive = Boolean.parseBoolean(parts[4].trim());
         
         Trainee trainee = new Trainee();
-        trainee.setId(id);
+        trainee.setUserId(id);
         trainee.setFirstName(firstName);
         trainee.setLastName(lastName);
         trainee.setDateOfBirth(dateOfBirth);
@@ -77,7 +77,7 @@ public class DataParser {
         Boolean isActive = Boolean.parseBoolean(parts[3].trim());
         
         Trainer trainer = new Trainer();
-        trainer.setId(id);
+        trainer.setUserId(id);
         trainer.setFirstName(firstName);
         trainer.setLastName(lastName);
         trainer.setSpecialization(specialization);

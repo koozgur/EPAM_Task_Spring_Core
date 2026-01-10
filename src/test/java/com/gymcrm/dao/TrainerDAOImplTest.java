@@ -44,8 +44,8 @@ class TrainerDAOImplTest {
 
         Trainer created = trainerDAO.create(newTrainer);
 
-        assertNotNull(created.getId());
-        assertEquals(2L, created.getId());
+        assertNotNull(created.getUserId());
+        assertEquals(2L, created.getUserId());
         assertTrue(trainerStorage.containsKey(2L));
         assertEquals(newTrainer, trainerStorage.get(2L));
         verify(storageService).generateTrainerId();
@@ -57,7 +57,7 @@ class TrainerDAOImplTest {
 
         Trainer created = trainerDAO.create(testTrainer);
 
-        assertEquals(1L, created.getId());
+        assertEquals(1L, created.getUserId());
         assertTrue(trainerStorage.containsKey(1L));
         assertEquals(testTrainer, trainerStorage.get(1L));
         verify(storageService, never()).generateTrainerId();

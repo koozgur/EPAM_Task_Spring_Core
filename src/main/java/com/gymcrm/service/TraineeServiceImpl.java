@@ -43,14 +43,14 @@ public class TraineeServiceImpl implements TraineeService {
         trainee.setPassword(password);
         
         Trainee createdTrainee = traineeDAO.create(trainee);
-        logger.info("Trainee created successfully with ID: {} and Username: {}", createdTrainee.getId(), createdTrainee.getUsername());
+        logger.info("Trainee created successfully with ID: {} and Username: {}", createdTrainee.getUserId(), createdTrainee.getUsername());
         
         return createdTrainee;
     }
 
     @Override
     public Trainee updateTrainee(Trainee trainee) {
-        logger.info("Updating trainee with ID: {}", trainee.getId());
+        logger.info("Updating trainee with ID: {}", trainee.getUserId());
         Trainee updatedTrainee = traineeDAO.update(trainee);
         logger.info("Trainee updated successfully");
         return updatedTrainee;

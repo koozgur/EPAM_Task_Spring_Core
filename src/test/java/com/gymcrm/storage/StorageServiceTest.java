@@ -94,7 +94,7 @@ class StorageServiceTest {
         // Arrange
         Map<Long, Trainee> storage = storageService.getTraineeStorage();
         Trainee trainee = new Trainee();
-        trainee.setId(999L);
+        trainee.setUserId(999L);
         trainee.setFirstName("Test");
         trainee.setLastName("User");
 
@@ -157,7 +157,7 @@ class StorageServiceTest {
         // Arrange
         Map<Long, Trainer> storage = storageService.getTrainerStorage();
         Trainer trainer = new Trainer();
-        trainer.setId(999L);
+        trainer.setUserId(999L);
         trainer.setFirstName("Test");
         trainer.setLastName("Trainer");
         trainer.setSpecialization("Yoga");

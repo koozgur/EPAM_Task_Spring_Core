@@ -45,8 +45,8 @@ class TraineeDAOImplTest {
 
         Trainee created = traineeDAO.create(newTrainee);
 
-        assertNotNull(created.getId());
-        assertEquals(2L, created.getId());
+        assertNotNull(created.getUserId());
+        assertEquals(2L, created.getUserId());
         assertTrue(traineeStorage.containsKey(2L));
         assertEquals(newTrainee, traineeStorage.get(2L));
         verify(storageService).generateTraineeId();
@@ -58,7 +58,7 @@ class TraineeDAOImplTest {
 
         Trainee created = traineeDAO.create(testTrainee);
 
-        assertEquals(1L, created.getId());
+        assertEquals(1L, created.getUserId());
         assertTrue(traineeStorage.containsKey(1L));
         assertEquals(testTrainee, traineeStorage.get(1L));
         verify(storageService, never()).generateTraineeId();

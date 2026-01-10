@@ -66,7 +66,7 @@ class StorageServiceMissingFileTest {
         Long trainingId = storageService.generateTrainingId();
 
         Trainee trainee = new Trainee();
-        trainee.setId(traineeId);
+        trainee.setUserId(traineeId);
         trainee.setFirstName("Test");
         trainee.setLastName("Trainee");
 

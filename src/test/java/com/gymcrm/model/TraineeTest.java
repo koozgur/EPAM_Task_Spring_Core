@@ -19,7 +19,7 @@ class TraineeTest {
 
         // Then
         assertThat(trainee).isNotNull();
-        assertThat(trainee.getId()).isNull();
+        assertThat(trainee.getUserId()).isNull();
         assertThat(trainee.getFirstName()).isNull();
         assertThat(trainee.getLastName()).isNull();
         assertThat(trainee.getUsername()).isNull();
@@ -46,7 +46,7 @@ class TraineeTest {
                                        password, dateOfBirth, address, isActive);
 
         // Then
-        assertThat(trainee.getId()).isEqualTo(id);
+        assertThat(trainee.getUserId()).isEqualTo(id);
         assertThat(trainee.getFirstName()).isEqualTo(firstName);
         assertThat(trainee.getLastName()).isEqualTo(lastName);
         assertThat(trainee.getUsername()).isEqualTo(username);
@@ -72,7 +72,7 @@ class TraineeTest {
                                        password, dateOfBirth, address, isActive);
 
         // Then
-        assertThat(trainee.getId()).isNull();
+        assertThat(trainee.getUserId()).isNull();
         assertThat(trainee.getFirstName()).isEqualTo(firstName);
         assertThat(trainee.getLastName()).isEqualTo(lastName);
         assertThat(trainee.getUsername()).isEqualTo(username);
@@ -96,7 +96,7 @@ class TraineeTest {
         Boolean isActive = true;
 
         // When
-        trainee.setId(id);
+        trainee.setUserId(id);
         trainee.setFirstName(firstName);
         trainee.setLastName(lastName);
         trainee.setUsername(username);
@@ -106,7 +106,7 @@ class TraineeTest {
         trainee.setIsActive(isActive);
 
         // Then
-        assertThat(trainee.getId()).isEqualTo(id);
+        assertThat(trainee.getUserId()).isEqualTo(id);
         assertThat(trainee.getFirstName()).isEqualTo(firstName);
         assertThat(trainee.getLastName()).isEqualTo(lastName);
         assertThat(trainee.getUsername()).isEqualTo(username);
@@ -219,7 +219,7 @@ class TraineeTest {
 
         // Then
         assertThat(result).contains("Trainee{");
-        assertThat(result).contains("id=1");
+        assertThat(result).contains("userId=1");
         assertThat(result).contains("firstName='John'");
         assertThat(result).contains("lastName='Doe'");
         assertThat(result).contains("username='john.doe'");
@@ -235,7 +235,7 @@ class TraineeTest {
         Trainee trainee = new Trainee(null, null, null, null, 
                                        null, null, null, null);
 
-        assertThat(trainee.getId()).isNull();
+        assertThat(trainee.getUserId()).isNull();
         assertThat(trainee.getFirstName()).isNull();
         assertThat(trainee.getLastName()).isNull();
         assertThat(trainee.getUsername()).isNull();

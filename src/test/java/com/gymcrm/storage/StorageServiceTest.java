@@ -94,7 +94,7 @@ class StorageServiceTest {
         // Arrange
         Map<Long, Trainee> storage = storageService.getTraineeStorage();
         Trainee trainee = new Trainee();
-        trainee.setId(999L);
+        trainee.setUserId(999L);
         trainee.setFirstName("Test");
         trainee.setLastName("User");
 

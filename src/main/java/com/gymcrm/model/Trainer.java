@@ -6,15 +6,10 @@ import java.util.Objects;
  * Trainer entity representing a gym instructor/trainer.
  * Contains personal information, credentials, specialization, and activity status.
  */
-public class Trainer {
-    
-    private Long id;
-    private String firstName;
-    private String lastName;
-    private String username;
-    private String password;
+public class Trainer extends User{
+
+    public Long userId;
     private String specialization;
-    private Boolean isActive;
 
     public Trainer() {
     }
@@ -43,44 +38,12 @@ public class Trainer {
         this.isActive = isActive;
     }
 
-    public Long getId() {
-        return id;
+    public Long getUserId() {
+        return userId;
     }
-    
-    public void setId(Long id) {
-        this.id = id;
-    }
-    
-    public String getFirstName() {
-        return firstName;
-    }
-    
-    public void setFirstName(String firstName) {
-        this.firstName = firstName;
-    }
-    
-    public String getLastName() {
-        return lastName;
-    }
-    
-    public void setLastName(String lastName) {
-        this.lastName = lastName;
-    }
-    
-    public String getUsername() {
-        return username;
-    }
-    
-    public void setUsername(String username) {
-        this.username = username;
-    }
-    
-    public String getPassword() {
-        return password;
-    }
-    
-    public void setPassword(String password) {
-        this.password = password;
+
+    public void setUserId(Long userId) {
+        this.userId = userId;
     }
     
     public String getSpecialization() {
@@ -89,14 +52,6 @@ public class Trainer {
     
     public void setSpecialization(String specialization) {
         this.specialization = specialization;
-    }
-    
-    public Boolean getIsActive() {
-        return isActive;
-    }
-    
-    public void setIsActive(Boolean isActive) {
-        this.isActive = isActive;
     }
     
     @Override

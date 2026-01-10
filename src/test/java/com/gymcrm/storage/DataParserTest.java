@@ -53,7 +53,7 @@ class DataParserTest {
         assertEquals(1, traineeStorage.size());
         Trainee trainee = traineeStorage.get(1L);
         assertNotNull(trainee);
-        assertEquals(1L, trainee.getId());
+        assertEquals(1L, trainee.getUserId());
         assertEquals("John", trainee.getFirstName());
         assertEquals("Doe", trainee.getLastName());
         assertEquals(LocalDate.of(1990, 5, 15), trainee.getDateOfBirth());

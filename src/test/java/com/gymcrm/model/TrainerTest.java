@@ -18,7 +18,7 @@ class TrainerTest {
 
         // Then
         assertThat(trainer).isNotNull();
-        assertThat(trainer.getId()).isNull();
+        assertThat(trainer.getUserId()).isNull();
         assertThat(trainer.getFirstName()).isNull();
         assertThat(trainer.getLastName()).isNull();
         assertThat(trainer.getUsername()).isNull();
@@ -43,7 +43,7 @@ class TrainerTest {
                                        password, specialization, isActive);
 
         // Then
-        assertThat(trainer.getId()).isEqualTo(id);
+        assertThat(trainer.getUserId()).isEqualTo(id);
         assertThat(trainer.getFirstName()).isEqualTo(firstName);
         assertThat(trainer.getLastName()).isEqualTo(lastName);
         assertThat(trainer.getUsername()).isEqualTo(username);
@@ -67,7 +67,7 @@ class TrainerTest {
                                        password, specialization, isActive);
 
         // Then
-        assertThat(trainer.getId()).isNull();
+        assertThat(trainer.getUserId()).isNull();
         assertThat(trainer.getFirstName()).isEqualTo(firstName);
         assertThat(trainer.getLastName()).isEqualTo(lastName);
         assertThat(trainer.getUsername()).isEqualTo(username);
@@ -89,7 +89,7 @@ class TrainerTest {
         Boolean isActive = true;
 
         // When
-        trainer.setId(id);
+        trainer.setUserId(id);
         trainer.setFirstName(firstName);
         trainer.setLastName(lastName);
         trainer.setUsername(username);
@@ -98,7 +98,7 @@ class TrainerTest {
         trainer.setIsActive(isActive);
 
         // Then
-        assertThat(trainer.getId()).isEqualTo(id);
+        assertThat(trainer.getUserId()).isEqualTo(id);
         assertThat(trainer.getFirstName()).isEqualTo(firstName);
         assertThat(trainer.getLastName()).isEqualTo(lastName);
         assertThat(trainer.getUsername()).isEqualTo(username);
@@ -209,7 +209,7 @@ class TrainerTest {
 
         // Then
         assertThat(result).contains("Trainer{");
-        assertThat(result).contains("id=1");
+        assertThat(result).contains("userId=1");
         assertThat(result).contains("firstName='Mike'");
         assertThat(result).contains("lastName='Trainer'");
         assertThat(result).contains("username='mike.trainer'");
@@ -224,7 +224,7 @@ class TrainerTest {
         Trainer trainer = new Trainer(null, null, null, null, 
                                        null, null, null);
 
-        assertThat(trainer.getId()).isNull();
+        assertThat(trainer.getUserId()).isNull();
         assertThat(trainer.getFirstName()).isNull();
         assertThat(trainer.getLastName()).isNull();
         assertThat(trainer.getUsername()).isNull();

@@ -71,7 +71,7 @@ class StorageServiceMissingFileTest {
         trainee.setLastName("Trainee");
 
         Trainer trainer = new Trainer();
-        trainer.setId(trainerId);
+        trainer.setUserId(trainerId);
         trainer.setFirstName("Test");
         trainer.setLastName("Trainer");
         trainer.setSpecialization("Fitness");

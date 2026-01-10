@@ -178,7 +178,7 @@ class DataParserTest {
         assertEquals(1, trainerStorage.size());
         Trainer trainer = trainerStorage.get(1L);
         assertNotNull(trainer);
-        assertEquals(1L, trainer.getId());
+        assertEquals(1L, trainer.getUserId());
         assertEquals("Alice", trainer.getFirstName());
         assertEquals("Williams", trainer.getLastName());
         assertEquals("Yoga", trainer.getSpecialization());

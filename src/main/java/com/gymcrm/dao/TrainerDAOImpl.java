@@ -36,32 +36,32 @@ public class TrainerDAOImpl implements TrainerDAO {
     public Trainer create(Trainer trainer) {
         logger.debug("Creating trainer: {}", trainer);
         
-        if (trainer.getId() == null) {
-            trainer.setId(storageService.generateTrainerId());
+        if (trainer.getUserId() == null) {
+            trainer.setUserId(storageService.generateTrainerId());
         }
         
-        storageService.getTrainerStorage().put(trainer.getId(), trainer);
-        logger.debug("Trainer created with ID: {}", trainer.getId());
+        storageService.getTrainerStorage().put(trainer.getUserId(), trainer);
+        logger.debug("Trainer created with ID: {}", trainer.getUserId());
         
         return trainer;
     }
     
     @Override
     public Trainer update(Trainer trainer) {
-        logger.debug("Updating trainer with ID: {}", trainer.getId());
+        logger.debug("Updating trainer with ID: {}", trainer.getUserId());
         
-        if (trainer.getId() == null) {
+        if (trainer.getUserId() == null) {
             logger.error("Cannot update trainer without ID");
             throw new IllegalArgumentException("Trainer ID cannot be null for update operation");
         }
         
-        if (!storageService.getTrainerStorage().containsKey(trainer.getId())) {
-            logger.error("Trainer not found with ID: {}", trainer.getId());
-            throw new IllegalArgumentException("Trainer not found with ID: " + trainer.getId());
+        if (!storageService.getTrainerStorage().containsKey(trainer.getUserId())) {
+            logger.error("Trainer not found with ID: {}", trainer.getUserId());
+            throw new IllegalArgumentException("Trainer not found with ID: " + trainer.getUserId());
         }
         
-        storageService.getTrainerStorage().put(trainer.getId(), trainer);
-        logger.debug("Trainer updated: {}", trainer.getId());
+        storageService.getTrainerStorage().put(trainer.getUserId(), trainer);
+        logger.debug("Trainer updated: {}", trainer.getUserId());
         
         return trainer;
     }

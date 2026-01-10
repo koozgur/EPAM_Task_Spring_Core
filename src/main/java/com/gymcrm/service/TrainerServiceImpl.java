@@ -43,14 +43,14 @@ public class TrainerServiceImpl implements TrainerService {
         trainer.setPassword(password);
         
         Trainer createdTrainer = trainerDAO.create(trainer);
-        logger.info("Trainer created successfully with ID: {} and Username: {}", createdTrainer.getId(), createdTrainer.getUsername());
+        logger.info("Trainer created successfully with ID: {} and Username: {}", createdTrainer.getUserId(), createdTrainer.getUsername());
         
         return createdTrainer;
     }
 
     @Override
     public Trainer updateTrainer(Trainer trainer) {
-        logger.info("Updating trainer with ID: {}", trainer.getId());
+        logger.info("Updating trainer with ID: {}", trainer.getUserId());
         Trainer updatedTrainer = trainerDAO.update(trainer);
         logger.info("Trainer updated successfully");
         return updatedTrainer;

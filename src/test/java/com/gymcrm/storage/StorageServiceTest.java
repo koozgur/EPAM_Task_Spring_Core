@@ -157,7 +157,7 @@ class StorageServiceTest {
         // Arrange
         Map<Long, Trainer> storage = storageService.getTrainerStorage();
         Trainer trainer = new Trainer();
-        trainer.setId(999L);
+        trainer.setUserId(999L);
         trainer.setFirstName("Test");
         trainer.setLastName("Trainer");
         trainer.setSpecialization("Yoga");

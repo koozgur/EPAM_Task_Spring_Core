@@ -77,7 +77,7 @@ public class DataParser {
         Boolean isActive = Boolean.parseBoolean(parts[3].trim());
         
         Trainer trainer = new Trainer();
-        trainer.setId(id);
+        trainer.setUserId(id);
         trainer.setFirstName(firstName);
         trainer.setLastName(lastName);
         trainer.setSpecialization(specialization);

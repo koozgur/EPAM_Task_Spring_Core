@@ -1,7 +1,7 @@
 package com.gymcrm.model;
 
 public abstract class User {
-    protected Long id;
+    protected Long userId;
     protected String firstName;
     protected String lastName;
     protected String username;
@@ -10,9 +10,9 @@ public abstract class User {
 
     protected User() {}
 
-    protected User(Long id, String firstName, String lastName,
+    protected User(Long userId, String firstName, String lastName,
                    String username, String password, boolean isActive) {
-        this.id = id;
+        this.userId = userId;
         this.firstName = firstName;
         this.lastName = lastName;
         this.username = username;
@@ -59,11 +59,11 @@ public abstract class User {
         this.firstName = firstName;
     }
 
-    public Long getId() {
-        return id;
+    public Long getUserId() {
+        return userId;
     }
 
-    public void setId(Long userId) {
-        this.id = userId;
+    public void setUserId(Long userId) {
+        this.userId = userId;
     }
 }

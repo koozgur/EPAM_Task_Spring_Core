@@ -71,13 +71,12 @@ public class Trainee extends User {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         Trainee trainee = (Trainee) o;
-        return Objects.equals(userId, trainee.userId) &&
-               Objects.equals(username, trainee.username);
+        return Objects.equals(userId, trainee.userId);
     }
     
     @Override
     public int hashCode() {
-        return Objects.hash(userId, username);
+        return Objects.hash(userId);
     }
     
     @Override

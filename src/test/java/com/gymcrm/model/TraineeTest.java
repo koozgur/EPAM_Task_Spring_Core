@@ -121,10 +121,10 @@ class TraineeTest {
         // Given
         Trainee trainee1 = new Trainee(1L, "John", "Doe", "john.doe", 
                                         "pass", LocalDate.now(), "Address", true);
-        Trainee trainee2 = new Trainee(1L, "Jane", "Smith", "john.doe", 
+        Trainee trainee2 = new Trainee(1L, "Jane", "Smith", "jane.smith", 
                                         "different", LocalDate.now(), "Other", false);
 
-        // Then
+        // Then - same userId means equal, regardless of other fields
         assertThat(trainee1).isEqualTo(trainee2);
     }
 
@@ -138,18 +138,6 @@ class TraineeTest {
 
         // Then
         assertThat(trainee1).isNotEqualTo(trainee2);
-    }
-
-    @Test
-    void testEqualsWithSameUsername() {
-        // Given
-        Trainee trainee1 = new Trainee(1L, "John", "Doe", "john.doe", 
-                                        "pass", LocalDate.now(), "Address", true);
-        Trainee trainee2 = new Trainee(1L, "Jane", "Smith", "john.doe", 
-                                        "different", LocalDate.now(), "Other", false);
-
-        // Then - should be equal because id and username match
-        assertThat(trainee1).isEqualTo(trainee2);
     }
 
     @Test
@@ -188,10 +176,10 @@ class TraineeTest {
         // Given
         Trainee trainee1 = new Trainee(1L, "John", "Doe", "john.doe", 
                                         "pass", LocalDate.now(), "Address", true);
-        Trainee trainee2 = new Trainee(1L, "Jane", "Smith", "john.doe", 
+        Trainee trainee2 = new Trainee(1L, "Jane", "Smith", "jane.smith", 
                                         "different", LocalDate.now(), "Other", false);
 
-        // Then - same id and username should produce same hash
+        // Then - same userId should produce same hash
         assertThat(trainee1.hashCode()).isEqualTo(trainee2.hashCode());
     }
 
@@ -257,22 +245,24 @@ class TraineeTest {
         // Given
         Trainee trainee1 = new Trainee(null, "John", "Doe", "john.doe", 
                                         "pass", LocalDate.now(), "Address", true);
-        Trainee trainee2 = new Trainee(null, "Jane", "Smith", "john.doe", 
+        Trainee trainee2 = new Trainee(null, "Jane", "Smith", "jane.smith", 
                                         "different", LocalDate.now(), "Other", false);
 
-        // Then - should be equal if usernames match even with null ids
+        // Then - both have null ids, Objects.equals(null, null) returns true
         assertThat(trainee1).isEqualTo(trainee2);
     }
 
     @Test
-    void testEqualsWithNullUsernames() {
+    void testHashCodeConsistency() {
         // Given
-        Trainee trainee1 = new Trainee(1L, "John", "Doe", null, 
-                                        "pass", LocalDate.now(), "Address", true);
-        Trainee trainee2 = new Trainee(1L, "Jane", "Smith", null, 
-                                        "different", LocalDate.now(), "Other", false);
+        Trainee trainee = new Trainee(1L, "John", "Doe", "john.doe", 
+                                       "pass", LocalDate.now(), "Address", true);
 
-        // Then - should be equal if ids match even with null usernames
-        assertThat(trainee1).isEqualTo(trainee2);
+        // Then - multiple calls should return same value
+        int hash1 = trainee.hashCode();
+        int hash2 = trainee.hashCode();
+        int hash3 = trainee.hashCode();
+        
+        assertThat(hash1).isEqualTo(hash2).isEqualTo(hash3);
     }
 }

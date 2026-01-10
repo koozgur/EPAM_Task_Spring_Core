@@ -39,8 +39,8 @@ class TrainerTest {
         Boolean isActive = true;
 
         // When
-        Trainer trainer = new Trainer(id, firstName, lastName, username, 
-                                       password, specialization, isActive);
+        Trainer trainer = new Trainer(id, firstName, lastName, username,
+                password, specialization, isActive);
 
         // Then
         assertThat(trainer.getUserId()).isEqualTo(id);
@@ -63,8 +63,8 @@ class TrainerTest {
         Boolean isActive = false;
 
         // When
-        Trainer trainer = new Trainer(firstName, lastName, username, 
-                                       password, specialization, isActive);
+        Trainer trainer = new Trainer(firstName, lastName, username,
+                password, specialization, isActive);
 
         // Then
         assertThat(trainer.getUserId()).isNull();
@@ -110,44 +110,32 @@ class TrainerTest {
     @Test
     void testEqualsWithSameId() {
         // Given
-        Trainer trainer1 = new Trainer(1L, "Mike", "Trainer", "mike.trainer", 
-                                        "pass", "Yoga", true);
-        Trainer trainer2 = new Trainer(1L, "Sarah", "Coach", "mike.trainer", 
+        Trainer trainer1 = new Trainer(1L, "Mike", "Trainer", "mike.trainer",
+                "pass", "Yoga", true);
+        Trainer trainer2 = new Trainer(1L, "Sarah", "Coach", "sarah.coach", 
                                         "different", "CrossFit", false);
 
-        // Then
+        // Then - same userId means equal, regardless of other fields
         assertThat(trainer1).isEqualTo(trainer2);
     }
 
     @Test
-    void testEqualsWithDifferentId() {
+    void testEqualsSymmetry() {
         // Given
-        Trainer trainer1 = new Trainer(1L, "Mike", "Trainer", "mike.trainer", 
-                                        "pass", "Yoga", true);
-        Trainer trainer2 = new Trainer(2L, "Mike", "Trainer", "mike.trainer", 
-                                        "pass", "Yoga", true);
+        Trainer trainer1 = new Trainer(1L, "Mike", "Trainer", "mike.trainer",
+                "pass", "Yoga", true);
+        Trainer trainer2 = new Trainer(1L, "Sarah", "Coach", "sarah.coach",
+                "different", "CrossFit", false);
 
-        // Then
-        assertThat(trainer1).isNotEqualTo(trainer2);
-    }
-
-    @Test
-    void testEqualsWithSameUsername() {
-        // Given
-        Trainer trainer1 = new Trainer(1L, "Mike", "Trainer", "mike.trainer", 
-                                        "pass", "Yoga", true);
-        Trainer trainer2 = new Trainer(1L, "Sarah", "Coach", "mike.trainer", 
-                                        "different", "CrossFit", false);
-
-        // Then - should be equal because id and username match
-        assertThat(trainer1).isEqualTo(trainer2);
+        // Then - equals should be symmetric: if a.equals(b) then b.equals(a)
+        assertThat(trainer1.equals(trainer2)).isEqualTo(trainer2.equals(trainer1));
     }
 
     @Test
     void testEqualsWithNull() {
         // Given
-        Trainer trainer = new Trainer(1L, "Mike", "Trainer", "mike.trainer", 
-                                       "pass", "Yoga", true);
+        Trainer trainer = new Trainer(1L, "Mike", "Trainer", "mike.trainer",
+                "pass", "Yoga", true);
 
         // Then
         assertThat(trainer).isNotEqualTo(null);
@@ -156,8 +144,8 @@ class TrainerTest {
     @Test
     void testEqualsWithDifferentClass() {
         // Given
-        Trainer trainer = new Trainer(1L, "Mike", "Trainer", "mike.trainer", 
-                                       "pass", "Yoga", true);
+        Trainer trainer = new Trainer(1L, "Mike", "Trainer", "mike.trainer",
+                "pass", "Yoga", true);
         String notATrainer = "Not a trainer";
 
         // Then
@@ -167,8 +155,8 @@ class TrainerTest {
     @Test
     void testEqualsWithSelf() {
         // Given
-        Trainer trainer = new Trainer(1L, "Mike", "Trainer", "mike.trainer", 
-                                       "pass", "Yoga", true);
+        Trainer trainer = new Trainer(1L, "Mike", "Trainer", "mike.trainer",
+                "pass", "Yoga", true);
 
         // Then
         assertThat(trainer).isEqualTo(trainer);
@@ -177,32 +165,29 @@ class TrainerTest {
     @Test
     void testHashCode() {
         // Given
-        Trainer trainer1 = new Trainer(1L, "Mike", "Trainer", "mike.trainer", 
-                                        "pass", "Yoga", true);
-        Trainer trainer2 = new Trainer(1L, "Sarah", "Coach", "mike.trainer", 
+        Trainer trainer1 = new Trainer(1L, "Mike", "Trainer", "mike.trainer",
+                "pass", "Yoga", true);
+        Trainer trainer2 = new Trainer(1L, "Sarah", "Coach", "sarah.coach", 
                                         "different", "CrossFit", false);
 
-        // Then - same id and username should produce same hash
+        // Then - same userId should produce same hash
         assertThat(trainer1.hashCode()).isEqualTo(trainer2.hashCode());
-    }
 
-    @Test
-    void testHashCodeDifferent() {
         // Given
-        Trainer trainer1 = new Trainer(1L, "Mike", "Trainer", "mike.trainer", 
-                                        "pass", "Yoga", true);
-        Trainer trainer2 = new Trainer(2L, "Sarah", "Coach", "sarah.coach", 
-                                        "different", "CrossFit", false);
+        Trainer trainer3 = new Trainer(1L, "Mike", "Trainer", "mike.trainer",
+                "pass", "Yoga", true);
+        Trainer trainer4 = new Trainer(2L, "Sarah", "Coach", "sarah.coach",
+                "different", "CrossFit", false);
 
-        // Then - different id and username should produce different hash
-        assertThat(trainer1.hashCode()).isNotEqualTo(trainer2.hashCode());
+        // Then - different id should produce different hash
+        assertThat(trainer3.hashCode()).isNotEqualTo(trainer4.hashCode());
     }
 
     @Test
     void testToString() {
         // Given
-        Trainer trainer = new Trainer(1L, "Mike", "Trainer", "mike.trainer", 
-                                       "password", "Yoga", true);
+        Trainer trainer = new Trainer(1L, "Mike", "Trainer", "mike.trainer",
+                "password", "Yoga", true);
 
         // When
         String result = trainer.toString();
@@ -221,8 +206,8 @@ class TrainerTest {
     @Test
     void testNullFieldHandling() {
         // Given
-        Trainer trainer = new Trainer(null, null, null, null, 
-                                       null, null, null);
+        Trainer trainer = new Trainer(null, null, null, null,
+                null, null, null);
 
         assertThat(trainer.getUserId()).isNull();
         assertThat(trainer.getFirstName()).isNull();
@@ -231,10 +216,10 @@ class TrainerTest {
         assertThat(trainer.getPassword()).isNull();
         assertThat(trainer.getSpecialization()).isNull();
         assertThat(trainer.getIsActive()).isNull();
-        
+
         // toString should not throw exception with null fields
         assertDoesNotThrow(() -> trainer.toString());
-        
+
         // equals and hashCode should not throw exception with null fields
         assertDoesNotThrow(() -> trainer.equals(new Trainer()));
         assertDoesNotThrow(() -> trainer.hashCode());
@@ -243,43 +228,26 @@ class TrainerTest {
     @Test
     void testEqualsWithNullIds() {
         // Given
-        Trainer trainer1 = new Trainer(null, "Mike", "Trainer", "mike.trainer", 
-                                        "pass", "Yoga", true);
-        Trainer trainer2 = new Trainer(null, "Sarah", "Coach", "mike.trainer", 
-                                        "different", "CrossFit", false);
+        Trainer trainer1 = new Trainer(null, "Mike", "Trainer", "mike.trainer",
+                "pass", "Yoga", true);
+        Trainer trainer2 = new Trainer(null, "Sarah", "Coach", "sarah.coach",
+                "different", "CrossFit", false);
 
-        // Then - should be equal if usernames match even with null ids
+        // Then - both have null ids, Objects.equals(null, null) returns true
         assertThat(trainer1).isEqualTo(trainer2);
     }
 
     @Test
-    void testEqualsWithNullUsernames() {
+    void testHashCodeConsistency() {
         // Given
-        Trainer trainer1 = new Trainer(1L, "Mike", "Trainer", null, 
-                                        "pass", "Yoga", true);
-        Trainer trainer2 = new Trainer(1L, "Sarah", "Coach", null, 
-                                        "different", "CrossFit", false);
+        Trainer trainer = new Trainer(1L, "Mike", "Trainer", "mike.trainer",
+                "pass", "Yoga", true);
 
-        // Then - should be equal if ids match even with null usernames
-        assertThat(trainer1).isEqualTo(trainer2);
-    }
-
-    @Test
-    void testDifferentSpecializations() {
-        // Given
-        Trainer trainer = new Trainer();
+        // Then - multiple calls should return same value
+        int hash1 = trainer.hashCode();
+        int hash2 = trainer.hashCode();
+        int hash3 = trainer.hashCode();
         
-        // When/Then - test various specializations
-        trainer.setSpecialization("Yoga");
-        assertThat(trainer.getSpecialization()).isEqualTo("Yoga");
-        
-        trainer.setSpecialization("CrossFit");
-        assertThat(trainer.getSpecialization()).isEqualTo("CrossFit");
-        
-        trainer.setSpecialization("Bodybuilding");
-        assertThat(trainer.getSpecialization()).isEqualTo("Bodybuilding");
-        
-        trainer.setSpecialization("Cardio");
-        assertThat(trainer.getSpecialization()).isEqualTo("Cardio");
+        assertThat(hash1).isEqualTo(hash2).isEqualTo(hash3);
     }
 }

@@ -50,13 +50,12 @@ public class Trainer extends User{
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         Trainer trainer = (Trainer) o;
-        return Objects.equals(this.userId, trainer.userId) &&
-               Objects.equals(username, trainer.username);
+        return Objects.equals(userId, trainer.userId);
     }
     
     @Override
     public int hashCode() {
-        return Objects.hash(this.userId, username);
+        return Objects.hash(userId);
     }
     
     @Override

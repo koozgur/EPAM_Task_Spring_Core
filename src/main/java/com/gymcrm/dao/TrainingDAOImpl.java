@@ -5,31 +5,45 @@ import com.gymcrm.storage.StorageService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Repository;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
 /**
  * Implementation of TrainingDAO for managing Training entities.
- * Uses StorageService for data persistence.
+ * Uses injected storage map bean for data persistence and StorageInitializer for ID generation.
  */
 @Repository
 public class TrainingDAOImpl implements TrainingDAO {
     
     private static final Logger logger = LoggerFactory.getLogger(TrainingDAOImpl.class);
     
+    private Map<Long, Training> trainingStorage;
     private StorageService storageService;
     
     /**
-     * Setter-based injection for StorageService
+     * Setter-based injection for training storage map
      * 
-     * @param storageService the storage service
+     * @param trainingStorage the training storage map bean
      */
     @Autowired
-    public void setStorageService(StorageService storageService) {
+    @Qualifier("trainingStorage")
+    public void setTrainingStorage(Map<Long, Training> trainingStorage) {
+        this.trainingStorage = trainingStorage;
+    }
+    
+    /**
+     * Setter-based injection for StorageInitializer (for ID generation)
+     * 
+     * @param storageService the storage initializer component
+     */
+    @Autowired
+    public void setStorageInitializer(StorageService storageService) {
         this.storageService = storageService;
     }
     
@@ -40,7 +54,7 @@ public class TrainingDAOImpl implements TrainingDAO {
         //ID fields will be generated internally
         training.setId(storageService.generateTrainingId());
         
-        storageService.getTrainingStorage().put(training.getId(), training);
+        trainingStorage.put(training.getId(), training);
         logger.debug("Training created with ID: {}", training.getId());
         
         return training;
@@ -55,7 +69,7 @@ public class TrainingDAOImpl implements TrainingDAO {
             return Optional.empty();
         }
         
-        Training training = storageService.getTrainingStorage().get(id);
+        Training training = trainingStorage.get(id);
         return Optional.ofNullable(training);
     }
     
@@ -63,7 +77,7 @@ public class TrainingDAOImpl implements TrainingDAO {
     public List<Training> findAll() {
         logger.debug("Finding all trainings");
         
-        List<Training> trainings = new ArrayList<>(storageService.getTrainingStorage().values());
+        List<Training> trainings = new ArrayList<>(trainingStorage.values());
         logger.debug("Found {} trainings", trainings.size());
         
         return trainings;
@@ -78,7 +92,7 @@ public class TrainingDAOImpl implements TrainingDAO {
             return new ArrayList<>();
         }
         
-        List<Training> trainings = storageService.getTrainingStorage().values().stream()
+        List<Training> trainings = trainingStorage.values().stream()
                 .filter(t -> traineeId.equals(t.getTraineeId()))
                 .collect(Collectors.toList());
         
@@ -97,7 +111,7 @@ public class TrainingDAOImpl implements TrainingDAO {
         }
 
         
-        List<Training> trainings = storageService.getTrainingStorage().values().stream()
+        List<Training> trainings = trainingStorage.values().stream()
                 .filter(t -> trainerId.equals(t.getTrainerId()))
                 .collect(Collectors.toList());
         

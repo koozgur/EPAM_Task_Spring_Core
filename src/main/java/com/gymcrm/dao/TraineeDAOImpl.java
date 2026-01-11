@@ -5,30 +5,44 @@ import com.gymcrm.storage.StorageService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Repository;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 /**
  * Implementation of TraineeDAO for managing Trainee entities.
- * Uses StorageService for data persistence.
+ * Uses injected storage map bean for data persistence and StorageInitializer for ID generation.
  */
 @Repository
 public class TraineeDAOImpl implements TraineeDAO {
     
     private static final Logger logger = LoggerFactory.getLogger(TraineeDAOImpl.class);
     
+    private Map<Long, Trainee> traineeStorage;
     private StorageService storageService;
     
     /**
-     * Setter-based injection for StorageService
+     * Setter-based injection for trainee storage map
      * 
-     * @param storageService the storage service
+     * @param traineeStorage the trainee storage map bean
      */
     @Autowired
-    public void setStorageService(StorageService storageService) {
+    @Qualifier("traineeStorage")
+    public void setTraineeStorage(Map<Long, Trainee> traineeStorage) {
+        this.traineeStorage = traineeStorage;
+    }
+    
+    /**
+     * Setter-based injection for StorageInitializer (for ID generation)
+     * 
+     * @param storageService the storage initializer component
+     */
+    @Autowired
+    public void setStorageInitializer(StorageService storageService) {
         this.storageService = storageService;
     }
     
@@ -39,7 +53,7 @@ public class TraineeDAOImpl implements TraineeDAO {
         //ID fields will be generated internally
         trainee.setUserId(storageService.generateTraineeId());
         
-        storageService.getTraineeStorage().put(trainee.getUserId(), trainee);
+        traineeStorage.put(trainee.getUserId(), trainee);
         logger.debug("Trainee created with ID: {}", trainee.getUserId());
         
         return trainee;
@@ -54,12 +68,12 @@ public class TraineeDAOImpl implements TraineeDAO {
             throw new IllegalArgumentException("Trainee ID cannot be null for update operation");
         }
         
-        if (!storageService.getTraineeStorage().containsKey(trainee.getUserId())) {
+        if (!traineeStorage.containsKey(trainee.getUserId())) {
             logger.error("Trainee not found with ID: {}", trainee.getUserId());
             throw new IllegalArgumentException("Trainee not found with ID: " + trainee.getUserId());
         }
         
-        storageService.getTraineeStorage().put(trainee.getUserId(), trainee);
+        traineeStorage.put(trainee.getUserId(), trainee);
         logger.debug("Trainee updated: {}", trainee.getUserId());
         
         return trainee;
@@ -74,7 +88,7 @@ public class TraineeDAOImpl implements TraineeDAO {
             throw new IllegalArgumentException("Trainee ID cannot be null");
         }
         
-        Trainee removed = storageService.getTraineeStorage().remove(id);
+        Trainee removed = traineeStorage.remove(id);
         
         if (removed == null) {
             logger.warn("Trainee not found for deletion with ID: {}", id);
@@ -92,7 +106,7 @@ public class TraineeDAOImpl implements TraineeDAO {
             return Optional.empty();
         }
         
-        Trainee trainee = storageService.getTraineeStorage().get(id);
+        Trainee trainee = traineeStorage.get(id);
         return Optional.ofNullable(trainee);
     }
     
@@ -100,7 +114,7 @@ public class TraineeDAOImpl implements TraineeDAO {
     public List<Trainee> findAll() {
         logger.debug("Finding all trainees");
         
-        List<Trainee> trainees = new ArrayList<>(storageService.getTraineeStorage().values());
+        List<Trainee> trainees = new ArrayList<>(traineeStorage.values());
         logger.debug("Found {} trainees", trainees.size());
         
         return trainees;
@@ -115,7 +129,7 @@ public class TraineeDAOImpl implements TraineeDAO {
             return Optional.empty();
         }
         
-        Optional<Trainee> trainee = storageService.getTraineeStorage().values().stream()
+        Optional<Trainee> trainee = traineeStorage.values().stream()
                 .filter(t -> username.equals(t.getUsername()))
                 .findFirst();
         

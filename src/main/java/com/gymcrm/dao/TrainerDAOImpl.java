@@ -7,25 +7,38 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
 
+import javax.annotation.Resource;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 /**
  * Implementation of TrainerDAO for managing Trainer entities.
- * Uses StorageService for data persistence.
+ * Uses injected storage map bean for data persistence and StorageService for ID generation.
  */
 @Repository
 public class TrainerDAOImpl implements TrainerDAO {
     
     private static final Logger logger = LoggerFactory.getLogger(TrainerDAOImpl.class);
     
+    private Map<Long, Trainer> trainerStorage;
     private StorageService storageService;
     
     /**
-     * Setter-based injection for StorageService
+     * Setter-based injection for trainer storage map using @Resource
      * 
-     * @param storageService the storage service
+     * @param trainerStorage the trainer storage map bean
+     */
+    @Resource
+    public void setTrainerStorage(Map<Long, Trainer> trainerStorage) {
+        this.trainerStorage = trainerStorage;
+    }
+    
+    /**
+     * Setter-based injection for StorageService (for ID generation)
+     * 
+     * @param storageService the storage service component
      */
     @Autowired
     public void setStorageService(StorageService storageService) {
@@ -39,7 +52,7 @@ public class TrainerDAOImpl implements TrainerDAO {
         //ID fields will be generated internally
         trainer.setUserId(storageService.generateTrainerId());
         
-        storageService.getTrainerStorage().put(trainer.getUserId(), trainer);
+        trainerStorage.put(trainer.getUserId(), trainer);
         logger.debug("Trainer created with ID: {}", trainer.getUserId());
         
         return trainer;
@@ -54,12 +67,12 @@ public class TrainerDAOImpl implements TrainerDAO {
             throw new IllegalArgumentException("Trainer ID cannot be null for update operation");
         }
         
-        if (!storageService.getTrainerStorage().containsKey(trainer.getUserId())) {
+        if (!trainerStorage.containsKey(trainer.getUserId())) {
             logger.error("Trainer not found with ID: {}", trainer.getUserId());
             throw new IllegalArgumentException("Trainer not found with ID: " + trainer.getUserId());
         }
         
-        storageService.getTrainerStorage().put(trainer.getUserId(), trainer);
+        trainerStorage.put(trainer.getUserId(), trainer);
         logger.debug("Trainer updated: {}", trainer.getUserId());
         
         return trainer;
@@ -74,7 +87,7 @@ public class TrainerDAOImpl implements TrainerDAO {
             return Optional.empty();
         }
         
-        Trainer trainer = storageService.getTrainerStorage().get(id);
+        Trainer trainer = trainerStorage.get(id);
         return Optional.ofNullable(trainer);
     }
     
@@ -82,7 +95,7 @@ public class TrainerDAOImpl implements TrainerDAO {
     public List<Trainer> findAll() {
         logger.debug("Finding all trainers");
         
-        List<Trainer> trainers = new ArrayList<>(storageService.getTrainerStorage().values());
+        List<Trainer> trainers = new ArrayList<>(trainerStorage.values());
         logger.debug("Found {} trainers", trainers.size());
         
         return trainers;
@@ -97,7 +110,7 @@ public class TrainerDAOImpl implements TrainerDAO {
             return Optional.empty();
         }
         
-        Optional<Trainer> trainer = storageService.getTrainerStorage().values().stream()
+        Optional<Trainer> trainer = trainerStorage.values().stream()
                 .filter(t -> username.equals(t.getUsername()))
                 .findFirst();
         

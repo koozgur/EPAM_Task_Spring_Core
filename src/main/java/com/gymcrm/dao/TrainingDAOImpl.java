@@ -5,9 +5,9 @@ import com.gymcrm.storage.StorageService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Repository;
 
+import javax.annotation.Resource;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -16,7 +16,7 @@ import java.util.stream.Collectors;
 
 /**
  * Implementation of TrainingDAO for managing Training entities.
- * Uses injected storage map bean for data persistence and StorageInitializer for ID generation.
+ * Uses injected storage map bean for data persistence and StorageService for ID generation.
  */
 @Repository
 public class TrainingDAOImpl implements TrainingDAO {
@@ -27,23 +27,22 @@ public class TrainingDAOImpl implements TrainingDAO {
     private StorageService storageService;
     
     /**
-     * Setter-based injection for training storage map
+     * Setter-based injection for training storage map using @Resource
      * 
      * @param trainingStorage the training storage map bean
      */
-    @Autowired
-    @Qualifier("trainingStorage")
+    @Resource
     public void setTrainingStorage(Map<Long, Training> trainingStorage) {
         this.trainingStorage = trainingStorage;
     }
     
     /**
-     * Setter-based injection for StorageInitializer (for ID generation)
+     * Setter-based injection for StorageService (for ID generation)
      * 
-     * @param storageService the storage initializer component
+     * @param storageService the storage service component
      */
     @Autowired
-    public void setStorageInitializer(StorageService storageService) {
+    public void setStorageService(StorageService storageService) {
         this.storageService = storageService;
     }
     

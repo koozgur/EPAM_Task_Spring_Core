@@ -9,49 +9,82 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
+import javax.annotation.Resource;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
- * In-memory storage service for managing Trainee, Trainer, and Training entities.
- * Provides thread-safe storage using ConcurrentHashMap and initializes data from file on startup.
+ * Storage initializer component responsible for:
+ * 1. Loading initial data from file into storage maps during application startup
+ * 2. Providing ID generation methods for each entity type
+ * 
+ * Uses @PostConstruct for bean post-processing to initialize storage with prepared data.
+ * File path is configured via property placeholder from external property file.
  */
 @Component
 public class StorageService {
     
     private static final Logger logger = LoggerFactory.getLogger(StorageService.class);
     
-    // Storage maps for each entity type
-    private final Map<Long, Trainee> traineeStorage = new ConcurrentHashMap<>();
-    private final Map<Long, Trainer> trainerStorage = new ConcurrentHashMap<>();
-    private final Map<Long, Training> trainingStorage = new ConcurrentHashMap<>();
+    // Storage maps injected from AppConfig beans
+    private Map<Long, Trainee> traineeStorage;
+    private Map<Long, Trainer> trainerStorage;
+    private Map<Long, Training> trainingStorage;
     
-    // ID generators for separate namespaces
+    // ID generators, managed internally
     private final AtomicLong traineeIdGenerator = new AtomicLong(1);
     private final AtomicLong trainerIdGenerator = new AtomicLong(1);
     private final AtomicLong trainingIdGenerator = new AtomicLong(1);
-    
+
     @Value("${storage.init.file.path:classpath:initial-data.txt}")
     private String initFilePath;
     
     /**
-     * Initialize storage with data from file after bean construction
+     * Setter-based injection for trainee storage map using @Resource
+     * @param traineeStorage the trainee storage map bean
+     */
+    @Resource
+    public void setTraineeStorage(Map<Long, Trainee> traineeStorage) {
+        this.traineeStorage = traineeStorage;
+    }
+    
+    /**
+     * Setter-based injection for trainer storage map using @Resource
+     * @param trainerStorage the trainer storage map bean
+     */
+    @Resource
+    public void setTrainerStorage(Map<Long, Trainer> trainerStorage) {
+        this.trainerStorage = trainerStorage;
+    }
+    
+    /**
+     * Setter-based injection for training storage map using @Resource
+     * @param trainingStorage the training storage map bean
+     */
+    @Resource
+    public void setTrainingStorage(Map<Long, Training> trainingStorage) {
+        this.trainingStorage = trainingStorage;
+    }
+    
+    /**
+     * Initialize storage with data from file after bean construction.
+     * This method is called automatically by Spring after all dependencies are injected.
      */
     @PostConstruct
     public void initialize() {
-        logger.info("Initializing storage service...");
+        logger.info("Initializing storage with data from file: {}", initFilePath);
         loadDataFromFile();
         logger.info("Storage initialization complete. Trainees: {}, Trainers: {}, Trainings: {}", 
                     traineeStorage.size(), trainerStorage.size(), trainingStorage.size());
     }
     
     /**
-     * Load initial data from file
+     * Load initial data from the configured file.
+     * Parses sections [TRAINEES], [TRAINERS], [TRAININGS] and populates respective storage maps.
      */
     private void loadDataFromFile() {
         String fileName = initFilePath.replace("classpath:", "");
@@ -104,32 +137,28 @@ public class StorageService {
         }
     }
     
-    // Trainee Storage Operations
+    // ==================== ID Generation Methods ====================
     
-    public Map<Long, Trainee> getTraineeStorage() {
-        return traineeStorage;
-    }
-    
+    /**
+     * Generate a new unique ID for a Trainee entity
+     * @return the next available trainee ID
+     */
     public Long generateTraineeId() {
         return traineeIdGenerator.getAndIncrement();
     }
     
-    // Trainer Storage Operations
-    
-    public Map<Long, Trainer> getTrainerStorage() {
-        return trainerStorage;
-    }
-    
+    /**
+     * Generate a new unique ID for a Trainer entity
+     * @return the next available trainer ID
+     */
     public Long generateTrainerId() {
         return trainerIdGenerator.getAndIncrement();
     }
     
-    // Training Storage Operations
-    
-    public Map<Long, Training> getTrainingStorage() {
-        return trainingStorage;
-    }
-    
+    /**
+     * Generate a new unique ID for a Training entity
+     * @return the next available training ID
+     */
     public Long generateTrainingId() {
         return trainingIdGenerator.getAndIncrement();
     }

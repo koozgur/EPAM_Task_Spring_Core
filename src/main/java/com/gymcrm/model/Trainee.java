@@ -8,8 +8,7 @@ import java.util.Objects;
  * Contains personal information, credentials, and activity status.
  */
 public class Trainee extends User {
-    
-    private Long userId;
+
     private LocalDate dateOfBirth;
     private String address;
 
@@ -40,14 +39,6 @@ public class Trainee extends User {
         this.dateOfBirth = dateOfBirth;
         this.address = address;
         this.isActive = isActive;
-    }
-    
-    public Long getUserId() {
-        return userId;
-    }
-    
-    public void setUserId(Long userId) {
-        this.userId = userId;
     }
     
     public LocalDate getDateOfBirth() {

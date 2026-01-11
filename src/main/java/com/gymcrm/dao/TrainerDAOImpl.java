@@ -35,10 +35,9 @@ public class TrainerDAOImpl implements TrainerDAO {
     @Override
     public Trainer create(Trainer trainer) {
         logger.debug("Creating trainer: {}", trainer);
-        
-        if (trainer.getUserId() == null) {
-            trainer.setUserId(storageService.generateTrainerId());
-        }
+
+        //ID fields will be generated internally
+        trainer.setUserId(storageService.generateTrainerId());
         
         storageService.getTrainerStorage().put(trainer.getUserId(), trainer);
         logger.debug("Trainer created with ID: {}", trainer.getUserId());

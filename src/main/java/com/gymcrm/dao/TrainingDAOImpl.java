@@ -36,10 +36,9 @@ public class TrainingDAOImpl implements TrainingDAO {
     @Override
     public Training create(Training training) {
         logger.debug("Creating training: {}", training);
-        
-        if (training.getId() == null) {
-            training.setId(storageService.generateTrainingId());
-        }
+
+        //ID fields will be generated internally
+        training.setId(storageService.generateTrainingId());
         
         storageService.getTrainingStorage().put(training.getId(), training);
         logger.debug("Training created with ID: {}", training.getId());

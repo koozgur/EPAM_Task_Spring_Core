@@ -36,10 +36,8 @@ public class TraineeDAOImpl implements TraineeDAO {
     public Trainee create(Trainee trainee) {
         logger.debug("Creating trainee: {}", trainee);
 
-        //TODO:check the requirements for whether we can get id from outside or not
-        if (trainee.getUserId() == null) {
-            trainee.setUserId(storageService.generateTraineeId());
-        }
+        //ID fields will be generated internally
+        trainee.setUserId(storageService.generateTraineeId());
         
         storageService.getTraineeStorage().put(trainee.getUserId(), trainee);
         logger.debug("Trainee created with ID: {}", trainee.getUserId());

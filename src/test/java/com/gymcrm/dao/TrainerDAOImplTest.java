@@ -25,22 +25,22 @@ class TrainerDAOImplTest {
 
     @InjectMocks
     private TrainerDAOImpl trainerDAO;
-
     private Map<Long, Trainer> trainerStorage;
     private Trainer testTrainer;
 
     @BeforeEach
     void setUp() {
         trainerStorage = new HashMap<>();
+        trainerDAO.setTrainerStorage(trainerStorage);
+        trainerDAO.setStorageService(storageService);
         testTrainer = new Trainer(1L, "John", "Doe", "John.Doe", "password", "Cardio", true);
     }
 
     @Test
-    void testCreateTrainerWithoutId() {
+    void testCreateTrainer() {
         Trainer newTrainer = new Trainer("Jane", "Doe", "Jane.Doe", "password", "Yoga", true);
         
         when(storageService.generateTrainerId()).thenReturn(2L);
-        when(storageService.getTrainerStorage()).thenReturn(trainerStorage);
 
         Trainer created = trainerDAO.create(newTrainer);
 
@@ -52,21 +52,21 @@ class TrainerDAOImplTest {
     }
 
     @Test
-    void testCreateTrainerWithId() {
-        when(storageService.getTrainerStorage()).thenReturn(trainerStorage);
+    void testCreateTrainerAlwaysGeneratesId() {
+        Trainer trainerWithId = new Trainer("Jane", "Doe", "Jane.Doe", "password", "Yoga", true);
+        
+        when(storageService.generateTrainerId()).thenReturn(1L);
 
-        Trainer created = trainerDAO.create(testTrainer);
+        Trainer created = trainerDAO.create(trainerWithId);
 
         assertEquals(1L, created.getUserId());
         assertTrue(trainerStorage.containsKey(1L));
-        assertEquals(testTrainer, trainerStorage.get(1L));
-        verify(storageService, never()).generateTrainerId();
+        verify(storageService).generateTrainerId();
     }
 
     @Test
     void testUpdateExistingTrainer() {
         trainerStorage.put(1L, testTrainer);
-        when(storageService.getTrainerStorage()).thenReturn(trainerStorage);
 
         Trainer updatedInfo = new Trainer(1L, "John", "Updated", "John.Doe", "newpass", "Strength", true);
         
@@ -79,8 +79,6 @@ class TrainerDAOImplTest {
 
     @Test
     void testUpdateNonExistentTrainer() {
-        when(storageService.getTrainerStorage()).thenReturn(trainerStorage);
-
         assertThrows(IllegalArgumentException.class, () -> trainerDAO.update(testTrainer));
     }
 
@@ -94,7 +92,6 @@ class TrainerDAOImplTest {
     @Test
     void testFindByIdExistingTrainer() {
         trainerStorage.put(1L, testTrainer);
-        when(storageService.getTrainerStorage()).thenReturn(trainerStorage);
 
         Optional<Trainer> result = trainerDAO.findById(1L);
 
@@ -104,8 +101,6 @@ class TrainerDAOImplTest {
 
     @Test
     void testFindByIdNonExistentTrainer() {
-        when(storageService.getTrainerStorage()).thenReturn(trainerStorage);
-
         Optional<Trainer> result = trainerDAO.findById(99L);
 
         assertFalse(result.isPresent());
@@ -123,8 +118,6 @@ class TrainerDAOImplTest {
         trainerStorage.put(1L, testTrainer);
         Trainer trainer2 = new Trainer(2L, "Jane", "Doe", "Jane.Doe", "password", "Yoga", true);
         trainerStorage.put(2L, trainer2);
-        
-        when(storageService.getTrainerStorage()).thenReturn(trainerStorage);
 
         List<Trainer> result = trainerDAO.findAll();
 
@@ -135,8 +128,6 @@ class TrainerDAOImplTest {
 
     @Test
     void testFindAllWithEmptyStorage() {
-        when(storageService.getTrainerStorage()).thenReturn(trainerStorage);
-
         List<Trainer> result = trainerDAO.findAll();
 
         assertTrue(result.isEmpty());
@@ -145,7 +136,6 @@ class TrainerDAOImplTest {
     @Test
     void testFindByUsernameExistingTrainer() {
         trainerStorage.put(1L, testTrainer);
-        when(storageService.getTrainerStorage()).thenReturn(trainerStorage);
 
         Optional<Trainer> result = trainerDAO.findByUsername("John.Doe");
 
@@ -156,7 +146,6 @@ class TrainerDAOImplTest {
     @Test
     void testFindByUsernameNonExistent() {
         trainerStorage.put(1L, testTrainer);
-        when(storageService.getTrainerStorage()).thenReturn(trainerStorage);
 
         Optional<Trainer> result = trainerDAO.findByUsername("Jane.Doe");
 

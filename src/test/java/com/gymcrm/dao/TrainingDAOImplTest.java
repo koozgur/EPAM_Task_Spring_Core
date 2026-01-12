@@ -26,22 +26,22 @@ class TrainingDAOImplTest {
 
     @InjectMocks
     private TrainingDAOImpl trainingDAO;
-
     private Map<Long, Training> trainingStorage;
     private Training testTraining;
 
     @BeforeEach
     void setUp() {
         trainingStorage = new HashMap<>();
+        trainingDAO.setTrainingStorage(trainingStorage);
+        trainingDAO.setStorageService(storageService);
         testTraining = new Training(1L, 10L, 20L, "Cardio Session", "Cardio", LocalDate.of(2023, 1, 1), 60);
     }
 
     @Test
-    void testCreateTrainingWithoutId() {
+    void testCreateTraining() {
         Training newTraining = new Training(10L, 20L, "Yoga Session", "Yoga", LocalDate.of(2023, 1, 2), 60);
         
         when(storageService.generateTrainingId()).thenReturn(2L);
-        when(storageService.getTrainingStorage()).thenReturn(trainingStorage);
 
         Training created = trainingDAO.create(newTraining);
 
@@ -53,21 +53,22 @@ class TrainingDAOImplTest {
     }
 
     @Test
-    void testCreateTrainingWithId() {
-        when(storageService.getTrainingStorage()).thenReturn(trainingStorage);
+    void testCreateTrainingAlwaysGeneratesId() {
+        Training trainingWithId = new Training(10L, 20L, "Yoga Session", "Yoga", LocalDate.of(2023, 1, 2), 60);
+        
+        when(storageService.generateTrainingId()).thenReturn(1L);
 
-        Training created = trainingDAO.create(testTraining);
+        Training created = trainingDAO.create(trainingWithId);
 
         assertEquals(1L, created.getId());
         assertTrue(trainingStorage.containsKey(1L));
-        assertEquals(testTraining, trainingStorage.get(1L));
-        verify(storageService, never()).generateTrainingId();
+        assertFalse(trainingStorage.containsKey(999L));
+        verify(storageService).generateTrainingId();
     }
 
     @Test
     void testFindByIdExistingTraining() {
         trainingStorage.put(1L, testTraining);
-        when(storageService.getTrainingStorage()).thenReturn(trainingStorage);
 
         Optional<Training> result = trainingDAO.findById(1L);
 
@@ -77,8 +78,6 @@ class TrainingDAOImplTest {
 
     @Test
     void testFindByIdNonExistentTraining() {
-        when(storageService.getTrainingStorage()).thenReturn(trainingStorage);
-
         Optional<Training> result = trainingDAO.findById(99L);
 
         assertFalse(result.isPresent());
@@ -96,8 +95,6 @@ class TrainingDAOImplTest {
         trainingStorage.put(1L, testTraining);
         Training training2 = new Training(2L, 10L, 20L, "Yoga Session", "Yoga", LocalDate.of(2023, 1, 2), 60);
         trainingStorage.put(2L, training2);
-        
-        when(storageService.getTrainingStorage()).thenReturn(trainingStorage);
 
         List<Training> result = trainingDAO.findAll();
 
@@ -108,8 +105,6 @@ class TrainingDAOImplTest {
 
     @Test
     void testFindAllWithEmptyStorage() {
-        when(storageService.getTrainingStorage()).thenReturn(trainingStorage);
-
         List<Training> result = trainingDAO.findAll();
 
         assertTrue(result.isEmpty());
@@ -122,8 +117,6 @@ class TrainingDAOImplTest {
         trainingStorage.put(2L, training2); // traineeId = 10
         Training training3 = new Training(3L, 11L, 20L, "Other Trainee", "Cardio", LocalDate.of(2023, 1, 4), 30);
         trainingStorage.put(3L, training3); // traineeId = 11
-        
-        when(storageService.getTrainingStorage()).thenReturn(trainingStorage);
 
         List<Training> result = trainingDAO.findByTraineeId(10L);
 
@@ -136,7 +129,6 @@ class TrainingDAOImplTest {
     @Test
     void testFindByTraineeIdNone() {
         trainingStorage.put(1L, testTraining); // traineeId = 10
-        when(storageService.getTrainingStorage()).thenReturn(trainingStorage);
 
         List<Training> result = trainingDAO.findByTraineeId(99L);
 
@@ -157,8 +149,6 @@ class TrainingDAOImplTest {
         trainingStorage.put(2L, training2); // trainerId = 20
         Training training3 = new Training(3L, 10L, 21L, "Other Trainer", "Cardio", LocalDate.of(2023, 1, 4), 30);
         trainingStorage.put(3L, training3); // trainerId = 21
-        
-        when(storageService.getTrainingStorage()).thenReturn(trainingStorage);
 
         List<Training> result = trainingDAO.findByTrainerId(20L);
 
@@ -171,7 +161,6 @@ class TrainingDAOImplTest {
     @Test
     void testFindByTrainerIdNone() {
         trainingStorage.put(1L, testTraining); // trainerId = 20
-        when(storageService.getTrainingStorage()).thenReturn(trainingStorage);
 
         List<Training> result = trainingDAO.findByTrainerId(99L);
 

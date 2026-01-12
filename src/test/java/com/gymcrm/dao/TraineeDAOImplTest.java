@@ -22,26 +22,27 @@ import static org.mockito.Mockito.*;
 class TraineeDAOImplTest {
 
     @Mock
-    private StorageService storageService; //fake object, without logic
+    private StorageService storageService; //external dependency, not the main entity we are testing
 
     @InjectMocks
-    private TraineeDAOImpl traineeDAO; //main real object we are testing
+    private TraineeDAOImpl traineeDAO;
 
+    //we aim to test actual logic on the map, explicitly controlling the map
     private Map<Long, Trainee> traineeStorage;
     private Trainee testTrainee;
 
     @BeforeEach
     void setUp() {
         traineeStorage = new HashMap<>();
+        traineeDAO.setTraineeStorage(traineeStorage);
         testTrainee = new Trainee(1L, "John", "Doe", "John.Doe", "password", LocalDate.of(1990, 1, 1), "Address", true);
     }
 
     @Test
-    void testCreateTraineeWithoutId() {
+    void testCreateTrainee() {
         Trainee newTrainee = new Trainee("Jane", "Doe", "Jane.Doe", "password", LocalDate.of(1995, 1, 1), "Address", true);
         
         when(storageService.generateTraineeId()).thenReturn(2L);
-        when(storageService.getTraineeStorage()).thenReturn(traineeStorage);
 
         Trainee created = traineeDAO.create(newTrainee);
 
@@ -53,21 +54,8 @@ class TraineeDAOImplTest {
     }
 
     @Test
-    void testCreateTraineeWithId() {
-        when(storageService.getTraineeStorage()).thenReturn(traineeStorage);
-
-        Trainee created = traineeDAO.create(testTrainee);
-
-        assertEquals(1L, created.getUserId());
-        assertTrue(traineeStorage.containsKey(1L));
-        assertEquals(testTrainee, traineeStorage.get(1L));
-        verify(storageService, never()).generateTraineeId();
-    }
-
-    @Test
     void testUpdateExistingTrainee() {
         traineeStorage.put(1L, testTrainee);
-        when(storageService.getTraineeStorage()).thenReturn(traineeStorage);
 
         Trainee updatedInfo = new Trainee(1L, "John", "Updated", "John.Doe", "newpass", LocalDate.of(1990, 1, 1), "New Address", true);
         
@@ -80,8 +68,6 @@ class TraineeDAOImplTest {
 
     @Test
     void testUpdateNonExistentTrainee() {
-        when(storageService.getTraineeStorage()).thenReturn(traineeStorage);
-
         assertThrows(IllegalArgumentException.class, () -> traineeDAO.update(testTrainee));
     }
 
@@ -95,8 +81,6 @@ class TraineeDAOImplTest {
     @Test
     void testDeleteExistingTrainee() {
         traineeStorage.put(1L, testTrainee);
-        when(storageService.getTraineeStorage()).thenReturn(traineeStorage);
-
         traineeDAO.delete(1L);
 
         assertFalse(traineeStorage.containsKey(1L));
@@ -104,8 +88,6 @@ class TraineeDAOImplTest {
 
     @Test
     void testDeleteNonExistentTrainee() {
-        when(storageService.getTraineeStorage()).thenReturn(traineeStorage);
-
         assertDoesNotThrow(() -> traineeDAO.delete(99L));
     }
 
@@ -117,7 +99,6 @@ class TraineeDAOImplTest {
     @Test
     void testFindByIdExistingTrainee() {
         traineeStorage.put(1L, testTrainee);
-        when(storageService.getTraineeStorage()).thenReturn(traineeStorage);
 
         Optional<Trainee> result = traineeDAO.findById(1L);
 
@@ -127,8 +108,6 @@ class TraineeDAOImplTest {
 
     @Test
     void testFindByIdNonExistentTrainee() {
-        when(storageService.getTraineeStorage()).thenReturn(traineeStorage);
-
         Optional<Trainee> result = traineeDAO.findById(99L);
 
         assertFalse(result.isPresent());
@@ -146,8 +125,6 @@ class TraineeDAOImplTest {
         traineeStorage.put(1L, testTrainee);
         Trainee trainee2 = new Trainee(2L, "Jane", "Doe", "Jane.Doe", "password", LocalDate.of(1995, 1, 1), "Address", true);
         traineeStorage.put(2L, trainee2);
-        
-        when(storageService.getTraineeStorage()).thenReturn(traineeStorage);
 
         List<Trainee> result = traineeDAO.findAll();
 
@@ -158,8 +135,6 @@ class TraineeDAOImplTest {
 
     @Test
     void testFindAllWithEmptyStorage() {
-        when(storageService.getTraineeStorage()).thenReturn(traineeStorage);
-
         List<Trainee> result = traineeDAO.findAll();
 
         assertTrue(result.isEmpty());
@@ -168,7 +143,6 @@ class TraineeDAOImplTest {
     @Test
     void testFindByUsernameExistingTrainee() {
         traineeStorage.put(1L, testTrainee);
-        when(storageService.getTraineeStorage()).thenReturn(traineeStorage);
 
         Optional<Trainee> result = traineeDAO.findByUsername("John.Doe");
 
@@ -179,7 +153,6 @@ class TraineeDAOImplTest {
     @Test
     void testFindByUsernameNonExistent() {
         traineeStorage.put(1L, testTrainee);
-        when(storageService.getTraineeStorage()).thenReturn(traineeStorage);
 
         Optional<Trainee> result = traineeDAO.findByUsername("Jane.Doe");
 

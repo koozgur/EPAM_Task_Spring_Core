@@ -10,6 +10,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
 import org.springframework.test.context.TestPropertySource;
 
+import javax.annotation.Resource;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -28,6 +29,15 @@ class StorageServiceTest {
 
     @Autowired
     private StorageService storageService;
+    
+    @Resource
+    private Map<Long, Trainee> traineeStorage;
+    
+    @Resource
+    private Map<Long, Trainer> trainerStorage;
+    
+    @Resource
+    private Map<Long, Training> trainingStorage;
 
     // ========== Initialization Tests ==========
 
@@ -35,25 +45,27 @@ class StorageServiceTest {
     @DisplayName("Should initialize storage service successfully")
     void testInitialize_Success() {
         // Assert - initialization happens via @PostConstruct
-        assertNotNull(storageService.getTraineeStorage());
-        assertNotNull(storageService.getTrainerStorage());
-        assertNotNull(storageService.getTrainingStorage());
+        assertNotNull(traineeStorage);
+        assertNotNull(trainerStorage);
+        assertNotNull(trainingStorage);
     }
 
     @Test
     @DisplayName("Should load data from file during initialization")
     void testInitialize_LoadsDataFromFile() {
         // Assert - data is loaded automatically via @PostConstruct
+        assertNotNull(traineeStorage, "Trainee storage should be initialized");
+        assertNotNull(trainerStorage, "Trainer storage should be initialized");
+        assertNotNull(trainingStorage, "Training storage should be initialized");
+    }
 
-        // Assert - Verify that data was loaded (counts may vary based on initial-data.txt)
-        Map<Long, Trainee> trainees = storageService.getTraineeStorage();
-        Map<Long, Trainer> trainers = storageService.getTrainerStorage();
-        Map<Long, Training> trainings = storageService.getTrainingStorage();
-
-        // At least check that storage maps are initialized
-        assertNotNull(trainees, "Trainee storage should be initialized");
-        assertNotNull(trainers, "Trainer storage should be initialized");
-        assertNotNull(trainings, "Training storage should be initialized");
+    @Test
+    @DisplayName("Should have pre-loaded data in storage maps after initialization")
+    void testInitialize_MapsContainPreLoadedData() {
+        // Assert - verify that data from initial-data.txt was loaded into storage maps
+        assertFalse(traineeStorage.isEmpty(), "Trainee storage should contain pre-loaded data");
+        assertFalse(trainerStorage.isEmpty(), "Trainer storage should contain pre-loaded data");
+        assertFalse(trainingStorage.isEmpty(), "Training storage should contain pre-loaded data");
     }
 
     // ========== Trainee Storage Tests ==========
@@ -92,30 +104,29 @@ class StorageServiceTest {
     @DisplayName("Should allow direct access to trainee storage for CRUD operations")
     void testTraineeStorage_CRUDOperations() {
         // Arrange
-        Map<Long, Trainee> storage = storageService.getTraineeStorage();
         Trainee trainee = new Trainee();
         trainee.setUserId(999L);
         trainee.setFirstName("Test");
         trainee.setLastName("User");
 
         // Act - Create
-        storage.put(999L, trainee);
+        traineeStorage.put(999L, trainee);
 
         // Assert - Read
-        assertTrue(storage.containsKey(999L));
-        assertEquals("Test", storage.get(999L).getFirstName());
+        assertTrue(traineeStorage.containsKey(999L));
+        assertEquals("Test", traineeStorage.get(999L).getFirstName());
 
         // Act - Update
-        storage.get(999L).setFirstName("Updated");
+        traineeStorage.get(999L).setFirstName("Updated");
 
         // Assert
-        assertEquals("Updated", storage.get(999L).getFirstName());
+        assertEquals("Updated", traineeStorage.get(999L).getFirstName());
 
         // Act - Delete
-        storage.remove(999L);
+        traineeStorage.remove(999L);
 
         // Assert
-        assertFalse(storage.containsKey(999L));
+        assertFalse(traineeStorage.containsKey(999L));
     }
 
     // ========== Trainer Storage Tests ==========
@@ -155,7 +166,6 @@ class StorageServiceTest {
     @DisplayName("Should allow direct access to trainer storage for CRUD operations")
     void testTrainerStorage_CRUDOperations() {
         // Arrange
-        Map<Long, Trainer> storage = storageService.getTrainerStorage();
         Trainer trainer = new Trainer();
         trainer.setUserId(999L);
         trainer.setFirstName("Test");
@@ -163,23 +173,23 @@ class StorageServiceTest {
         trainer.setSpecialization("Yoga");
 
         // Act - Create
-        storage.put(999L, trainer);
+        trainerStorage.put(999L, trainer);
 
         // Assert - Read
-        assertTrue(storage.containsKey(999L));
-        assertEquals("Test", storage.get(999L).getFirstName());
+        assertTrue(trainerStorage.containsKey(999L));
+        assertEquals("Test", trainerStorage.get(999L).getFirstName());
 
         // Act - Update
-        storage.get(999L).setSpecialization("Pilates");
+        trainerStorage.get(999L).setSpecialization("Pilates");
 
         // Assert
-        assertEquals("Pilates", storage.get(999L).getSpecialization());
+        assertEquals("Pilates", trainerStorage.get(999L).getSpecialization());
 
         // Act - Delete
-        storage.remove(999L);
+        trainerStorage.remove(999L);
 
         // Assert
-        assertFalse(storage.containsKey(999L));
+        assertFalse(trainerStorage.containsKey(999L));
     }
 
     // ========== Training Storage Tests ==========
@@ -219,7 +229,6 @@ class StorageServiceTest {
     @DisplayName("Should allow direct access to training storage for CRUD operations")
     void testTrainingStorage_CRUDOperations() {
         // Arrange
-        Map<Long, Training> storage = storageService.getTrainingStorage();
         Training training = new Training();
         training.setId(999L);
         training.setTraineeId(1L);
@@ -227,23 +236,23 @@ class StorageServiceTest {
         training.setTrainingName("Test Session");
 
         // Act - Create
-        storage.put(999L, training);
+        trainingStorage.put(999L, training);
 
         // Assert - Read
-        assertTrue(storage.containsKey(999L));
-        assertEquals("Test Session", storage.get(999L).getTrainingName());
+        assertTrue(trainingStorage.containsKey(999L));
+        assertEquals("Test Session", trainingStorage.get(999L).getTrainingName());
 
         // Act - Update
-        storage.get(999L).setTrainingName("Updated Session");
+        trainingStorage.get(999L).setTrainingName("Updated Session");
 
         // Assert
-        assertEquals("Updated Session", storage.get(999L).getTrainingName());
+        assertEquals("Updated Session", trainingStorage.get(999L).getTrainingName());
 
         // Act - Delete
-        storage.remove(999L);
+        trainingStorage.remove(999L);
 
         // Assert
-        assertFalse(storage.containsKey(999L));
+        assertFalse(trainingStorage.containsKey(999L));
     }
 
     // ========== ID Generator Independence Tests ==========
@@ -272,47 +281,26 @@ class StorageServiceTest {
     @Test
     @DisplayName("Should use ConcurrentHashMap for thread-safe storage")
     void testStorageMaps_ThreadSafe() {
-        // Act
-        Map<Long, Trainee> traineeStorage = storageService.getTraineeStorage();
-        Map<Long, Trainer> trainerStorage = storageService.getTrainerStorage();
-        Map<Long, Training> trainingStorage = storageService.getTrainingStorage();
-
         // Assert - Verify the maps support concurrent operations
         assertDoesNotThrow(() -> {
-            traineeStorage.put(1L, new Trainee());
-            trainerStorage.put(1L, new Trainer());
-            trainingStorage.put(1L, new Training());
+            traineeStorage.put(9998L, new Trainee());
+            trainerStorage.put(9998L, new Trainer());
+            trainingStorage.put(9998L, new Training());
+            
+            // Cleanup
+            traineeStorage.remove(9998L);
+            trainerStorage.remove(9998L);
+            trainingStorage.remove(9998L);
         });
-    }
-
-    // ========== Edge Cases ==========
-
-    @Test
-    @DisplayName("Should handle empty sections in data file")
-    void testInitialize_EmptySections() {
-        // This test depends on the content of initial-data.txt
-        // Assert - Should not throw exceptions during initialization
-        assertNotNull(storageService.getTraineeStorage());
-        assertNotNull(storageService.getTrainerStorage());
-        assertNotNull(storageService.getTrainingStorage());
-    }
-
-    @Test
-    @DisplayName("Should skip comment lines and empty lines during data loading")
-    void testInitialize_SkipsCommentsAndEmptyLines() {
-        // This test verifies the behavior indirectly through successful initialization
-        // Assert - Bean initialization should complete without errors
-        assertNotNull(storageService);
-        assertNotNull(storageService.getTraineeStorage());
     }
 
     @Test
     @DisplayName("Should continue ID generation after initialization")
     void testIdGeneration_AfterInitialization() {
         // Get the size of loaded data to determine next expected ID
-        int traineeCount = storageService.getTraineeStorage().size();
-        int trainerCount = storageService.getTrainerStorage().size();
-        int trainingCount = storageService.getTrainingStorage().size();
+        int traineeCount = traineeStorage.size();
+        int trainerCount = trainerStorage.size();
+        int trainingCount = trainingStorage.size();
 
         // Act
         Long nextTraineeId = storageService.generateTraineeId();

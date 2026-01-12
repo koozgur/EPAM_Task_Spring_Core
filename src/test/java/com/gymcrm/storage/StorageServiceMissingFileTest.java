@@ -10,6 +10,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
 import org.springframework.test.context.TestPropertySource;
 
+import javax.annotation.Resource;
+import java.util.Map;
+
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
@@ -25,19 +28,28 @@ class StorageServiceMissingFileTest {
 
     @Autowired
     private StorageService storageService;
+    
+    @Resource
+    private Map<Long, Trainee> traineeStorage;
+    
+    @Resource
+    private Map<Long, Trainer> trainerStorage;
+    
+    @Resource
+    private Map<Long, Training> trainingStorage;
 
     @Test
     @DisplayName("Should handle missing data file gracefully")
     void testInitialize_MissingFile() {
         // Assert - Storage should be initialized even with missing file
-        assertNotNull(storageService.getTraineeStorage());
-        assertNotNull(storageService.getTrainerStorage());
-        assertNotNull(storageService.getTrainingStorage());
+        assertNotNull(traineeStorage);
+        assertNotNull(trainerStorage);
+        assertNotNull(trainingStorage);
         
         // Storage maps should be empty but initialized
-        assertEquals(0, storageService.getTraineeStorage().size());
-        assertEquals(0, storageService.getTrainerStorage().size());
-        assertEquals(0, storageService.getTrainingStorage().size());
+        assertEquals(0, traineeStorage.size());
+        assertEquals(0, trainerStorage.size());
+        assertEquals(0, trainingStorage.size());
     }
 
     @Test
@@ -84,13 +96,13 @@ class StorageServiceMissingFileTest {
 
         // Act & Assert - Should be able to use storage normally
         assertDoesNotThrow(() -> {
-            storageService.getTraineeStorage().put(traineeId, trainee);
-            storageService.getTrainerStorage().put(trainerId, trainer);
-            storageService.getTrainingStorage().put(trainingId, training);
+            traineeStorage.put(traineeId, trainee);
+            trainerStorage.put(trainerId, trainer);
+            trainingStorage.put(trainingId, training);
         });
 
-        assertEquals(1, storageService.getTraineeStorage().size());
-        assertEquals(1, storageService.getTrainerStorage().size());
-        assertEquals(1, storageService.getTrainingStorage().size());
+        assertEquals(1, traineeStorage.size());
+        assertEquals(1, trainerStorage.size());
+        assertEquals(1, trainingStorage.size());
     }
 }

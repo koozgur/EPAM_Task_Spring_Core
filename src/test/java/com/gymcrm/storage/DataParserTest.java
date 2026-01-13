@@ -3,9 +3,13 @@ package com.gymcrm.storage;
 import com.gymcrm.model.Trainee;
 import com.gymcrm.model.Trainer;
 import com.gymcrm.model.Training;
+import com.gymcrm.util.CredentialsGenerator;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.LocalDate;
 import java.util.HashMap;
@@ -13,11 +17,14 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.when;
 
 /**
  * Unit tests for DataParser class.
  * Tests CSV parsing logic for Trainee, Trainer, and Training entities.
  */
+@ExtendWith(MockitoExtension.class)
 @DisplayName("DataParser Tests")
 class DataParserTest {
 
@@ -27,6 +34,9 @@ class DataParserTest {
     private AtomicLong traineeIdGenerator;
     private AtomicLong trainerIdGenerator;
     private AtomicLong trainingIdGenerator;
+    
+    @Mock
+    private CredentialsGenerator credentialsGenerator;
 
     @BeforeEach
     void setUp() {
@@ -36,6 +46,11 @@ class DataParserTest {
         traineeIdGenerator = new AtomicLong(1);
         trainerIdGenerator = new AtomicLong(1);
         trainingIdGenerator = new AtomicLong(1);
+        
+        // Setup mock credentials generator
+        when(credentialsGenerator.generateUsername(anyString(), anyString()))
+            .thenAnswer(invocation -> invocation.getArgument(0) + "." + invocation.getArgument(1));
+        when(credentialsGenerator.generatePassword()).thenReturn("testPassword");
     }
 
     // ========== Trainee Parsing Tests ==========
@@ -47,7 +62,7 @@ class DataParserTest {
         String line = "John,Doe,1990-05-15,123 Main St,true";
 
         // Act
-        DataParser.parseAndAddTrainee(line, traineeStorage, traineeIdGenerator);
+        DataParser.parseAndAddTrainee(line, traineeStorage, traineeIdGenerator, credentialsGenerator);
 
         // Assert
         assertEquals(1, traineeStorage.size());
@@ -59,6 +74,8 @@ class DataParserTest {
         assertEquals(LocalDate.of(1990, 5, 15), trainee.getDateOfBirth());
         assertEquals("123 Main St", trainee.getAddress());
         assertTrue(trainee.getIsActive());
+        assertEquals("John.Doe", trainee.getUsername());
+        assertEquals("testPassword", trainee.getPassword());
     }
 
     @Test
@@ -68,7 +85,7 @@ class DataParserTest {
         String line = "Jane,Smith,,456 Oak Ave,false";
 
         // Act
-        DataParser.parseAndAddTrainee(line, traineeStorage, traineeIdGenerator);
+        DataParser.parseAndAddTrainee(line, traineeStorage, traineeIdGenerator, credentialsGenerator);
 
         // Assert
         assertEquals(1, traineeStorage.size());
@@ -88,7 +105,7 @@ class DataParserTest {
         String line = "Bob,Johnson,1985-12-20,,true";
 
         // Act
-        DataParser.parseAndAddTrainee(line, traineeStorage, traineeIdGenerator);
+        DataParser.parseAndAddTrainee(line, traineeStorage, traineeIdGenerator, credentialsGenerator);
 
         // Assert
         assertEquals(1, traineeStorage.size());
@@ -108,7 +125,7 @@ class DataParserTest {
         String line = "John,Doe,1990-05-15"; // Missing fields
 
         // Act
-        DataParser.parseAndAddTrainee(line, traineeStorage, traineeIdGenerator);
+        DataParser.parseAndAddTrainee(line, traineeStorage, traineeIdGenerator, credentialsGenerator);
 
         // Assert
         assertEquals(0, traineeStorage.size(), "No trainee should be added for invalid format");
@@ -121,7 +138,7 @@ class DataParserTest {
         String line = "John,Doe,1990-05-15,123 Main St,true,extra,data";
 
         // Act
-        DataParser.parseAndAddTrainee(line, traineeStorage, traineeIdGenerator);
+        DataParser.parseAndAddTrainee(line, traineeStorage, traineeIdGenerator, credentialsGenerator);
 
         // Assert
         assertEquals(0, traineeStorage.size(), "No trainee should be added for invalid format");
@@ -135,8 +152,8 @@ class DataParserTest {
         String line2 = "Jane,Smith,1992-08-20,456 Oak Ave,false";
 
         // Act
-        DataParser.parseAndAddTrainee(line1, traineeStorage, traineeIdGenerator);
-        DataParser.parseAndAddTrainee(line2, traineeStorage, traineeIdGenerator);
+        DataParser.parseAndAddTrainee(line1, traineeStorage, traineeIdGenerator, credentialsGenerator);
+        DataParser.parseAndAddTrainee(line2, traineeStorage, traineeIdGenerator, credentialsGenerator);
 
         // Assert
         assertEquals(2, traineeStorage.size());
@@ -153,7 +170,7 @@ class DataParserTest {
         String line = "  John  ,  Doe  ,  1990-05-15  ,  123 Main St  ,  true  ";
 
         // Act
-        DataParser.parseAndAddTrainee(line, traineeStorage, traineeIdGenerator);
+        DataParser.parseAndAddTrainee(line, traineeStorage, traineeIdGenerator, credentialsGenerator);
 
         // Assert
         assertEquals(1, traineeStorage.size());
@@ -172,7 +189,7 @@ class DataParserTest {
         String line = "Alice,Williams,Yoga,true";
 
         // Act
-        DataParser.parseAndAddTrainer(line, trainerStorage, trainerIdGenerator);
+        DataParser.parseAndAddTrainer(line, trainerStorage, trainerIdGenerator, credentialsGenerator);
 
         // Assert
         assertEquals(1, trainerStorage.size());
@@ -183,6 +200,8 @@ class DataParserTest {
         assertEquals("Williams", trainer.getLastName());
         assertEquals("Yoga", trainer.getSpecialization());
         assertTrue(trainer.getIsActive());
+        assertEquals("Alice.Williams", trainer.getUsername());
+        assertEquals("testPassword", trainer.getPassword());
     }
 
     @Test
@@ -192,7 +211,7 @@ class DataParserTest {
         String line = "Bob,Brown,,false";
 
         // Act
-        DataParser.parseAndAddTrainer(line, trainerStorage, trainerIdGenerator);
+        DataParser.parseAndAddTrainer(line, trainerStorage, trainerIdGenerator, credentialsGenerator);
 
         // Assert
         assertEquals(1, trainerStorage.size());
@@ -211,7 +230,7 @@ class DataParserTest {
         String line = "Alice,Williams,Yoga"; // Missing isActive field
 
         // Act
-        DataParser.parseAndAddTrainer(line, trainerStorage, trainerIdGenerator);
+        DataParser.parseAndAddTrainer(line, trainerStorage, trainerIdGenerator, credentialsGenerator);
 
         // Assert
         assertEquals(0, trainerStorage.size(), "No trainer should be added for invalid format");
@@ -224,7 +243,7 @@ class DataParserTest {
         String line = "Alice,Williams,Yoga,true,extra,data";
 
         // Act
-        DataParser.parseAndAddTrainer(line, trainerStorage, trainerIdGenerator);
+        DataParser.parseAndAddTrainer(line, trainerStorage, trainerIdGenerator, credentialsGenerator);
 
         // Assert
         assertEquals(0, trainerStorage.size(), "No trainer should be added for invalid format");
@@ -239,9 +258,9 @@ class DataParserTest {
         String line3 = "Carol,Davis,CrossFit,true";
 
         // Act
-        DataParser.parseAndAddTrainer(line1, trainerStorage, trainerIdGenerator);
-        DataParser.parseAndAddTrainer(line2, trainerStorage, trainerIdGenerator);
-        DataParser.parseAndAddTrainer(line3, trainerStorage, trainerIdGenerator);
+        DataParser.parseAndAddTrainer(line1, trainerStorage, trainerIdGenerator, credentialsGenerator);
+        DataParser.parseAndAddTrainer(line2, trainerStorage, trainerIdGenerator, credentialsGenerator);
+        DataParser.parseAndAddTrainer(line3, trainerStorage, trainerIdGenerator, credentialsGenerator);
 
         // Assert
         assertEquals(3, trainerStorage.size());
@@ -260,7 +279,7 @@ class DataParserTest {
         String line = "  Alice  ,  Williams  ,  Yoga  ,  true  ";
 
         // Act
-        DataParser.parseAndAddTrainer(line, trainerStorage, trainerIdGenerator);
+        DataParser.parseAndAddTrainer(line, trainerStorage, trainerIdGenerator, credentialsGenerator);
 
         // Assert
         assertEquals(1, trainerStorage.size());

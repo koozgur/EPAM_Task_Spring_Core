@@ -3,6 +3,7 @@ package com.gymcrm.storage;
 import com.gymcrm.model.Trainee;
 import com.gymcrm.model.Trainer;
 import com.gymcrm.model.Training;
+import com.gymcrm.util.CredentialsGenerator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -39,9 +40,21 @@ public class StorageService {
     private final AtomicLong traineeIdGenerator = new AtomicLong(1);
     private final AtomicLong trainerIdGenerator = new AtomicLong(1);
     private final AtomicLong trainingIdGenerator = new AtomicLong(1);
+    
+    // Credentials generator for username and password
+    private CredentialsGenerator credentialsGenerator;
 
     @Value("${storage.init.file.path:classpath:initial-data.txt}")
     private String initFilePath;
+    
+    /**
+     * Setter-based injection for credentials generator
+     * @param credentialsGenerator the credentials generator bean
+     */
+    @Resource
+    public void setCredentialsGenerator(CredentialsGenerator credentialsGenerator) {
+        this.credentialsGenerator = credentialsGenerator;
+    }
     
     /**
      * Setter-based injection for trainee storage map using @Resource
@@ -119,9 +132,9 @@ public class StorageService {
                     // Process data based on current section
                     try {
                         if ("TRAINEES".equals(currentSection)) {
-                            DataParser.parseAndAddTrainee(line, traineeStorage, traineeIdGenerator);
+                            DataParser.parseAndAddTrainee(line, traineeStorage, traineeIdGenerator, credentialsGenerator);
                         } else if ("TRAINERS".equals(currentSection)) {
-                            DataParser.parseAndAddTrainer(line, trainerStorage, trainerIdGenerator);
+                            DataParser.parseAndAddTrainer(line, trainerStorage, trainerIdGenerator, credentialsGenerator);
                         } else if ("TRAININGS".equals(currentSection)) {
                             DataParser.parseAndAddTraining(line, trainingStorage, trainingIdGenerator);
                         }

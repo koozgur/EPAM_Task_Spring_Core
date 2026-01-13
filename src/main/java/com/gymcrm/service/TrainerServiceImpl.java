@@ -67,10 +67,17 @@ public class TrainerServiceImpl implements TrainerService {
             logger.warn("Rejected trainer update for null trainer ID");
             throw new IllegalArgumentException("Trainer ID cannot be null for update");
         }
-        
-        Trainer updatedTrainer = trainerDAO.update(trainer);
-        logger.info("Trainer updated id={}", updatedTrainer.getUserId());
-        return updatedTrainer;
+
+        try {
+            Trainer updated = trainerDAO.update(trainer);
+            logger.info("Trainer updated id={}", updated.getUserId());
+            return updated;
+
+        } catch (IllegalArgumentException e) {
+            // Expected business failure (not found, invalid state)
+            logger.warn("Update failed: trainer id={} not found", trainer.getUserId());
+            throw e;
+        }
     }
 
     @Override

@@ -108,6 +108,8 @@ class TrainingServiceImplTest {
         newTraining.setTraineeId(99L);
         newTraining.setTrainerId(20L);
         newTraining.setTrainingName("Test Session");
+        newTraining.setTrainingDate(LocalDate.of(2023, 7, 1));
+        newTraining.setTrainingDuration(60);
 
         when(traineeDAO.findById(99L)).thenReturn(Optional.empty());
 
@@ -115,7 +117,7 @@ class TrainingServiceImplTest {
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, 
             () -> trainingService.createTraining(newTraining));
         
-        assertEquals("Trainee not found", exception.getMessage());
+        assertEquals("Trainee not found with ID: 99", exception.getMessage());
         verify(traineeDAO).findById(99L);
         verify(trainerDAO, never()).findById(any());
         verify(trainingDAO, never()).create(any());
@@ -129,6 +131,8 @@ class TrainingServiceImplTest {
         newTraining.setTraineeId(10L);
         newTraining.setTrainerId(99L);
         newTraining.setTrainingName("Test Session");
+        newTraining.setTrainingDate(LocalDate.of(2023, 7, 1));
+        newTraining.setTrainingDuration(60);
 
         when(traineeDAO.findById(10L)).thenReturn(Optional.of(testTrainee));
         when(trainerDAO.findById(99L)).thenReturn(Optional.empty());
@@ -137,7 +141,7 @@ class TrainingServiceImplTest {
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, 
             () -> trainingService.createTraining(newTraining));
         
-        assertEquals("Trainer not found", exception.getMessage());
+        assertEquals("Trainer not found with ID: 99", exception.getMessage());
         verify(traineeDAO).findById(10L);
         verify(trainerDAO).findById(99L);
         verify(trainingDAO, never()).create(any());

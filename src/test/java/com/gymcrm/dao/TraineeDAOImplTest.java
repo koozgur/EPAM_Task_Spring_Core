@@ -88,7 +88,9 @@ class TraineeDAOImplTest {
 
     @Test
     void testDeleteNonExistentTrainee() {
-        assertDoesNotThrow(() -> traineeDAO.delete(99L));
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, 
+            () -> traineeDAO.delete(99L));
+        assertEquals("Trainee not found: 99", exception.getMessage());
     }
 
     @Test

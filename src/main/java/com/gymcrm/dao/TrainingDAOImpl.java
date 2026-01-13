@@ -48,74 +48,39 @@ public class TrainingDAOImpl implements TrainingDAO {
     
     @Override
     public Training create(Training training) {
-        logger.debug("Creating training: {}", training);
-
         //ID fields will be generated internally
         training.setId(storageService.generateTrainingId());
         
         trainingStorage.put(training.getId(), training);
-        logger.debug("Training created with ID: {}", training.getId());
+        logger.debug("Persisted Training entity id={}", training.getId());
         
         return training;
     }
     
     @Override
     public Optional<Training> findById(Long id) {
-        logger.debug("Finding training by ID: {}", id);
-        
-        if (id == null) {
-            logger.debug("Cannot find training with null ID");
-            return Optional.empty();
-        }
-        
-        Training training = trainingStorage.get(id);
-        return Optional.ofNullable(training);
+        //Service defines what is a valid request, input control against business rules
+        return Optional.ofNullable(trainingStorage.get(id));
     }
     
     @Override
     public List<Training> findAll() {
-        logger.debug("Finding all trainings");
-        
-        List<Training> trainings = new ArrayList<>(trainingStorage.values());
-        logger.debug("Found {} trainings", trainings.size());
-        
-        return trainings;
+        return new ArrayList<>(trainingStorage.values());
     }
     
     @Override
     public List<Training> findByTraineeId(Long traineeId) {
-        logger.debug("Finding trainings by trainee ID: {}", traineeId);
-        
-        if (traineeId == null) {
-            logger.debug("Cannot find trainings with null trainee ID");
-            return new ArrayList<>();
-        }
-        
-        List<Training> trainings = trainingStorage.values().stream()
+        //Service defines what is a valid request, input control against business rules
+        return trainingStorage.values().stream()
                 .filter(t -> traineeId.equals(t.getTraineeId()))
                 .collect(Collectors.toList());
-        
-        logger.debug("Found {} trainings for trainee ID: {}", trainings.size(), traineeId);
-        
-        return trainings;
     }
     
     @Override
     public List<Training> findByTrainerId(Long trainerId) {
-        logger.debug("Finding trainings by trainer ID: {}", trainerId);
-        
-        if (trainerId == null) {
-            logger.debug("Cannot find trainings with null trainer ID");
-            return new ArrayList<>();
-        }
-
-        
-        List<Training> trainings = trainingStorage.values().stream()
+        //Service defines what is a valid request, input control against business rules
+        return trainingStorage.values().stream()
                 .filter(t -> trainerId.equals(t.getTrainerId()))
                 .collect(Collectors.toList());
-        
-        logger.debug("Found {} trainings for trainer ID: {}", trainings.size(), trainerId);
-        
-        return trainings;
     }
 }

@@ -31,8 +31,20 @@ public class TrainerServiceImpl implements TrainerService {
 
     @Override
     public Trainer createTrainer(Trainer trainer) {
-        logger.info("Creating new trainer: {} {}", trainer.getFirstName(), trainer.getLastName());
-        
+        if (trainer == null) {
+            logger.warn("Rejected trainer creation for null trainer");
+            throw new IllegalArgumentException("Trainer cannot be null");
+        }
+        if (trainer.getFirstName() == null || trainer.getFirstName().trim().isEmpty()) {
+            logger.warn("Rejected trainer creation for null/empty first name");
+            throw new IllegalArgumentException("Trainer first name cannot be null or empty");
+        }
+        if (trainer.getLastName() == null || trainer.getLastName().trim().isEmpty()) {
+            logger.warn("Rejected trainer creation for null/empty last name");
+            throw new IllegalArgumentException("Trainer last name cannot be null or empty");
+        }
+
+        // Service owns the business logic of creation, DAO just stores the object
         String username = credentialsGenerator.generateUsername(trainer.getFirstName(), trainer.getLastName());
         String password = credentialsGenerator.generatePassword();
         
@@ -40,28 +52,54 @@ public class TrainerServiceImpl implements TrainerService {
         trainer.setPassword(password);
         
         Trainer createdTrainer = trainerDAO.create(trainer);
-        logger.info("Trainer created successfully with ID: {} and Username: {}", createdTrainer.getUserId(), createdTrainer.getUsername());
+        logger.info("Trainer created id={} username={}", createdTrainer.getUserId(), createdTrainer.getUsername());
         
         return createdTrainer;
     }
 
     @Override
     public Trainer updateTrainer(Trainer trainer) {
-        logger.info("Updating trainer with ID: {}", trainer.getUserId());
-        Trainer updatedTrainer = trainerDAO.update(trainer);
-        logger.info("Trainer updated successfully");
-        return updatedTrainer;
+        if (trainer == null) {
+            logger.warn("Rejected trainer update for null trainer");
+            throw new IllegalArgumentException("Trainer cannot be null");
+        }
+        if (trainer.getUserId() == null) {
+            logger.warn("Rejected trainer update for null trainer ID");
+            throw new IllegalArgumentException("Trainer ID cannot be null for update");
+        }
+
+        try {
+            Trainer updated = trainerDAO.update(trainer);
+            logger.info("Trainer updated id={}", updated.getUserId());
+            return updated;
+
+        } catch (IllegalArgumentException e) {
+            // Expected business failure (not found, invalid state)
+            logger.warn("Update failed: trainer id={} not found", trainer.getUserId());
+            throw e;
+        }
     }
 
     @Override
     public Optional<Trainer> getTrainer(Long id) {
-        logger.debug("Fetching trainer with ID: {}", id);
-        return trainerDAO.findById(id);
+        if (id == null) {
+            logger.warn("Rejected trainer retrieval for null trainer ID");
+            throw new IllegalArgumentException("Trainer ID cannot be null");
+        }
+        
+        Optional<Trainer> trainer = trainerDAO.findById(id);
+        if (trainer.isPresent()) {
+            logger.debug("Trainer found id={}", id);
+        } else {
+            logger.debug("Trainer not found id={}", id);
+        }
+        return trainer;
     }
 
     @Override
     public List<Trainer> getAllTrainers() {
-        logger.debug("Fetching all trainers");
-        return trainerDAO.findAll();
+        List<Trainer> trainers = trainerDAO.findAll();
+        logger.debug("Found {} trainers", trainers.size());
+        return trainers;
     }
 }

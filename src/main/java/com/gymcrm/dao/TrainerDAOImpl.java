@@ -47,79 +47,41 @@ public class TrainerDAOImpl implements TrainerDAO {
     
     @Override
     public Trainer create(Trainer trainer) {
-        logger.debug("Creating trainer: {}", trainer);
-
         //ID fields will be generated internally
         trainer.setUserId(storageService.generateTrainerId());
         
         trainerStorage.put(trainer.getUserId(), trainer);
-        logger.debug("Trainer created with ID: {}", trainer.getUserId());
+        logger.debug("Persisted Trainer entity id={}", trainer.getUserId());
         
         return trainer;
     }
     
     @Override
     public Trainer update(Trainer trainer) {
-        logger.debug("Updating trainer with ID: {}", trainer.getUserId());
-        
-        if (trainer.getUserId() == null) {
-            logger.error("Cannot update trainer without ID");
-            throw new IllegalArgumentException("Trainer ID cannot be null for update operation");
-        }
-        
         if (!trainerStorage.containsKey(trainer.getUserId())) {
-            logger.error("Trainer not found with ID: {}", trainer.getUserId());
             throw new IllegalArgumentException("Trainer not found with ID: " + trainer.getUserId());
         }
         
         trainerStorage.put(trainer.getUserId(), trainer);
-        logger.debug("Trainer updated: {}", trainer.getUserId());
-        
+        logger.debug("Updated Trainer entity id={}", trainer.getUserId());
         return trainer;
     }
     
     @Override
     public Optional<Trainer> findById(Long id) {
-        logger.debug("Finding trainer by ID: {}", id);
-        
-        if (id == null) {
-            logger.debug("Cannot find trainer with null ID");
-            return Optional.empty();
-        }
-        
-        Trainer trainer = trainerStorage.get(id);
-        return Optional.ofNullable(trainer);
+        //Service defines what is a valid request, input control against business rules
+        return Optional.ofNullable(trainerStorage.get(id));
     }
     
     @Override
     public List<Trainer> findAll() {
-        logger.debug("Finding all trainers");
-        
-        List<Trainer> trainers = new ArrayList<>(trainerStorage.values());
-        logger.debug("Found {} trainers", trainers.size());
-        
-        return trainers;
+        return new ArrayList<>(trainerStorage.values());
     }
     
     @Override
     public Optional<Trainer> findByUsername(String username) {
-        logger.debug("Finding trainer by username: {}", username);
-        
-        if (username == null || username.trim().isEmpty()) {
-            logger.debug("Cannot find trainer with null or empty username");
-            return Optional.empty();
-        }
-        
-        Optional<Trainer> trainer = trainerStorage.values().stream()
+        return trainerStorage.values().stream()
                 .filter(t -> username.equals(t.getUsername()))
                 .findFirst();
-        
-        if (trainer.isPresent()) {
-            logger.debug("Found trainer with username: {}", username);
-        } else {
-            logger.debug("No trainer found with username: {}", username);
-        }
-        
-        return trainer;
     }
 }

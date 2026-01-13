@@ -31,8 +31,21 @@ public class TraineeServiceImpl implements TraineeService {
 
     @Override
     public Trainee createTrainee(Trainee trainee) {
-        logger.info("Creating new trainee: {} {}", trainee.getFirstName(), trainee.getLastName());
-        
+        // Input validation
+        if (trainee == null) {
+            logger.warn("Rejected trainee creation for null trainee");
+            throw new IllegalArgumentException("Trainee cannot be null");
+        }
+        if (trainee.getFirstName() == null || trainee.getFirstName().trim().isEmpty()) {
+            logger.warn("Rejected trainee creation for null/empty first name");
+            throw new IllegalArgumentException("Trainee first name cannot be null or empty");
+        }
+        if (trainee.getLastName() == null || trainee.getLastName().trim().isEmpty()) {
+            logger.warn("Rejected trainee creation for null/empty last name");
+            throw new IllegalArgumentException("Trainee last name cannot be null or empty");
+        }
+
+        // Service owns the business logic of creation, DAO just stores the object
         String username = credentialsGenerator.generateUsername(trainee.getFirstName(), trainee.getLastName());
         String password = credentialsGenerator.generatePassword();
         
@@ -40,35 +53,71 @@ public class TraineeServiceImpl implements TraineeService {
         trainee.setPassword(password);
         
         Trainee createdTrainee = traineeDAO.create(trainee);
-        logger.info("Trainee created successfully with ID: {} and Username: {}", createdTrainee.getUserId(), createdTrainee.getUsername());
-        
+        logger.info("Trainee created id={} username={}", createdTrainee.getUserId(), createdTrainee.getUsername());
+
         return createdTrainee;
     }
 
     @Override
     public Trainee updateTrainee(Trainee trainee) {
-        logger.info("Updating trainee with ID: {}", trainee.getUserId());
-        Trainee updatedTrainee = traineeDAO.update(trainee);
-        logger.info("Trainee updated successfully");
-        return updatedTrainee;
+        // Input validation
+        if (trainee == null) {
+            logger.warn("Rejected trainee update for null trainee");
+            throw new IllegalArgumentException("Trainee cannot be null");
+        }
+        if (trainee.getUserId() == null) {
+            logger.warn("Rejected trainee update for null trainee ID");
+            throw new IllegalArgumentException("Trainee ID cannot be null for update");
+        }
+
+        try {
+            Trainee updated = traineeDAO.update(trainee);
+            logger.info("Trainee updated id={}", updated.getUserId());
+            return updated;
+
+        } catch (IllegalArgumentException e) {
+            // Expected business failure (not found, invalid state)
+            logger.warn("Update failed: trainee id={} not found", trainee.getUserId());
+            throw e;
+        }
     }
 
     @Override
     public void deleteTrainee(Long id) {
-        logger.info("Deleting trainee with ID: {}", id);
-        traineeDAO.delete(id);
-        logger.info("Trainee deleted successfully");
+        if (id == null) {
+            logger.warn("Rejected trainee deletion for null trainee ID");
+            throw new IllegalArgumentException("Trainee ID cannot be null");
+        }
+        try{
+            traineeDAO.delete(id);
+            logger.info("Trainee deleted id={}", id);
+        }
+        catch (IllegalArgumentException e){
+            logger.warn("Trainee not found for id={}", id);
+            throw e;
+        }
     }
 
     @Override
     public Optional<Trainee> getTrainee(Long id) {
-        logger.debug("Fetching trainee with ID: {}", id);
-        return traineeDAO.findById(id);
+        if (id == null) {
+            logger.warn("Rejected trainee retrieval for null trainee ID");
+            throw new IllegalArgumentException("Trainee ID cannot be null");
+        }
+        
+        Optional<Trainee> trainee = traineeDAO.findById(id);
+        if (trainee.isPresent()) {
+            logger.debug("Trainee found id={}", id);
+        } else {
+            logger.debug("Trainee not found id={}", id);
+        }
+        return trainee;
     }
 
     @Override
     public List<Trainee> getAllTrainees() {
-        logger.debug("Fetching all trainees");
-        return traineeDAO.findAll();
+        List<Trainee> trainees = traineeDAO.findAll();
+        logger.debug("Found {} trainees", trainees.size());
+        return trainees;
     }
 }

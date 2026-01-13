@@ -19,7 +19,8 @@ import java.util.Optional;
  */
 @Repository
 public class TraineeDAOImpl implements TraineeDAO {
-    
+
+    //DAO logs technical persistence facts, not business events.
     private static final Logger logger = LoggerFactory.getLogger(TraineeDAOImpl.class);
     
     private Map<Long, Trainee> traineeStorage;
@@ -47,97 +48,51 @@ public class TraineeDAOImpl implements TraineeDAO {
     
     @Override
     public Trainee create(Trainee trainee) {
-        logger.debug("Creating trainee: {}", trainee);
-
         //ID fields will be generated internally
         trainee.setUserId(storageService.generateTraineeId());
         
         traineeStorage.put(trainee.getUserId(), trainee);
-        logger.debug("Trainee created with ID: {}", trainee.getUserId());
+        logger.debug("Persisted Trainee entity id={}", trainee.getUserId());
         
         return trainee;
     }
     
     @Override
     public Trainee update(Trainee trainee) {
-        logger.debug("Updating trainee with ID: {}", trainee.getUserId());
-        
-        if (trainee.getUserId() == null) {
-            logger.error("Cannot update trainee without ID");
-            throw new IllegalArgumentException("Trainee ID cannot be null for update operation");
-        }
-        
         if (!traineeStorage.containsKey(trainee.getUserId())) {
-            logger.error("Trainee not found with ID: {}", trainee.getUserId());
             throw new IllegalArgumentException("Trainee not found with ID: " + trainee.getUserId());
         }
         
         traineeStorage.put(trainee.getUserId(), trainee);
-        logger.debug("Trainee updated: {}", trainee.getUserId());
-        
+        logger.debug("Updated Trainee entity id={}", trainee.getUserId());
         return trainee;
     }
     
     @Override
     public void delete(Long id) {
-        logger.debug("Deleting trainee with ID: {}", id);
-        
-        if (id == null) {
-            logger.error("Cannot delete trainee with null ID");
-            throw new IllegalArgumentException("Trainee ID cannot be null");
-        }
-        
         Trainee removed = traineeStorage.remove(id);
-        
         if (removed == null) {
-            logger.warn("Trainee not found for deletion with ID: {}", id);
-        } else {
-            logger.debug("Trainee deleted with ID: {}", id);
+            throw new IllegalArgumentException("Trainee not found: " + id);
         }
+        logger.debug("Deleted Trainee entity id={}", id);
     }
-    
+
     @Override
     public Optional<Trainee> findById(Long id) {
-        logger.debug("Finding trainee by ID: {}", id);
-        
-        if (id == null) {
-            logger.debug("Cannot find trainee with null ID");
-            return Optional.empty();
-        }
-        
-        Trainee trainee = traineeStorage.get(id);
-        return Optional.ofNullable(trainee);
+        //Service defines what is a valid request, input control against business rules
+        return Optional.ofNullable(traineeStorage.get(id));
     }
-    
+
+
     @Override
     public List<Trainee> findAll() {
-        logger.debug("Finding all trainees");
-        
-        List<Trainee> trainees = new ArrayList<>(traineeStorage.values());
-        logger.debug("Found {} trainees", trainees.size());
-        
-        return trainees;
+        return new ArrayList<>(traineeStorage.values());
     }
     
     @Override
     public Optional<Trainee> findByUsername(String username) {
-        logger.debug("Finding trainee by username: {}", username);
-        
-        if (username == null || username.trim().isEmpty()) {
-            logger.debug("Cannot find trainee with null or empty username");
-            return Optional.empty();
-        }
-        
-        Optional<Trainee> trainee = traineeStorage.values().stream()
+        return traineeStorage.values().stream()
                 .filter(t -> username.equals(t.getUsername()))
                 .findFirst();
-        
-        if (trainee.isPresent()) {
-            logger.debug("Found trainee with username: {}", username);
-        } else {
-            logger.debug("No trainee found with username: {}", username);
-        }
-        
-        return trainee;
     }
 }

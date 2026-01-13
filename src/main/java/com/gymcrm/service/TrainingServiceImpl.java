@@ -38,45 +38,92 @@ public class TrainingServiceImpl implements TrainingService {
 
     @Override
     public Training createTraining(Training training) {
-        logger.info("Creating new training: {}", training.getTrainingName());
+        if (training == null) {
+            logger.warn("Rejected training creation for null training");
+            throw new IllegalArgumentException("Training cannot be null");
+        }
+        if (training.getTraineeId() == null) {
+            logger.warn("Rejected training creation for null trainee ID");
+            throw new IllegalArgumentException("Trainee ID cannot be null");
+        }
+        if (training.getTrainerId() == null) {
+            logger.warn("Rejected training creation for null trainer ID");
+            throw new IllegalArgumentException("Trainer ID cannot be null");
+        }
+        if (training.getTrainingName() == null || training.getTrainingName().trim().isEmpty()) {
+            logger.warn("Rejected training creation for null/empty training name");
+            throw new IllegalArgumentException("Training name cannot be null or empty");
+        }
+        if (training.getTrainingDate() == null) {
+            logger.warn("Rejected training creation for null training date");
+            throw new IllegalArgumentException("Training date cannot be null");
+        }
+        if (training.getTrainingDuration() == null || training.getTrainingDuration() <= 0) {
+            logger.warn("Rejected training creation for invalid training duration");
+            throw new IllegalArgumentException("Training duration must be a positive number");
+        }
         
+        // Validate that trainee and trainer exist
         if (traineeDAO.findById(training.getTraineeId()).isEmpty()) {
-            logger.error("Trainee with ID {} not found", training.getTraineeId());
-            throw new IllegalArgumentException("Trainee not found");
+            logger.warn("Rejected training creation - trainee not found id={}", training.getTraineeId());
+            throw new IllegalArgumentException("Trainee not found with ID: " + training.getTraineeId());
         }
         
         if (trainerDAO.findById(training.getTrainerId()).isEmpty()) {
-            logger.error("Trainer with ID {} not found", training.getTrainerId());
-            throw new IllegalArgumentException("Trainer not found");
+            logger.warn("Rejected training creation - trainer not found id={}", training.getTrainerId());
+            throw new IllegalArgumentException("Trainer not found with ID: " + training.getTrainerId());
         }
         
         Training createdTraining = trainingDAO.create(training);
-        logger.info("Training created successfully with ID: {}", createdTraining.getId());
+        logger.info("Training created id={} name={}", createdTraining.getId(), createdTraining.getTrainingName());
         
         return createdTraining;
     }
 
     @Override
     public Optional<Training> getTraining(Long id) {
-        logger.debug("Fetching training with ID: {}", id);
-        return trainingDAO.findById(id);
+        if (id == null) {
+            logger.warn("Rejected training retrieval for null training ID");
+            throw new IllegalArgumentException("Training ID cannot be null");
+        }
+        
+        Optional<Training> training = trainingDAO.findById(id);
+        if (training.isPresent()) {
+            logger.debug("Training found id={}", id);
+        } else {
+            logger.debug("Training not found id={}", id);
+        }
+        return training;
     }
 
     @Override
     public List<Training> getAllTrainings() {
-        logger.debug("Fetching all trainings");
-        return trainingDAO.findAll();
+        List<Training> trainings = trainingDAO.findAll();
+        logger.debug("Found {} trainings", trainings.size());
+        return trainings;
     }
 
     @Override
     public List<Training> getTrainingsByTrainee(Long traineeId) {
-        logger.debug("Fetching trainings for trainee ID: {}", traineeId);
-        return trainingDAO.findByTraineeId(traineeId);
+        if (traineeId == null) {
+            logger.warn("Rejected trainings retrieval for null trainee ID");
+            throw new IllegalArgumentException("Trainee ID cannot be null");
+        }
+        
+        List<Training> trainings = trainingDAO.findByTraineeId(traineeId);
+        logger.debug("Found {} trainings for trainee id={}", trainings.size(), traineeId);
+        return trainings;
     }
 
     @Override
     public List<Training> getTrainingsByTrainer(Long trainerId) {
-        logger.debug("Fetching trainings for trainer ID: {}", trainerId);
-        return trainingDAO.findByTrainerId(trainerId);
+        if (trainerId == null) {
+            logger.warn("Rejected trainings retrieval for null trainer ID");
+            throw new IllegalArgumentException("Trainer ID cannot be null");
+        }
+        
+        List<Training> trainings = trainingDAO.findByTrainerId(trainerId);
+        logger.debug("Found {} trainings for trainer id={}", trainings.size(), trainerId);
+        return trainings;
     }
 }

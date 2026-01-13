@@ -3,6 +3,7 @@ package com.gymcrm.storage;
 import com.gymcrm.model.Trainee;
 import com.gymcrm.model.Trainer;
 import com.gymcrm.model.Training;
+import com.gymcrm.util.CredentialsGenerator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -27,8 +28,9 @@ public class DataParser {
      * @param line CSV line to parse
      * @param traineeStorage Storage map to add the trainee
      * @param idGenerator ID generator for trainee
+     * @param credentialsGenerator Generator for username and password
      */
-    public static void parseAndAddTrainee(String line, Map<Long, Trainee> traineeStorage, AtomicLong idGenerator) {
+    public static void parseAndAddTrainee(String line, Map<Long, Trainee> traineeStorage, AtomicLong idGenerator, CredentialsGenerator credentialsGenerator) {
         String[] parts = line.split(",", -1);
         if (parts.length != 5) {
             logger.warn("Invalid trainee data format: {}", line);
@@ -43,13 +45,15 @@ public class DataParser {
         Boolean isActive = Boolean.parseBoolean(parts[4].trim());
         
         Trainee trainee = new Trainee();
-        trainee.setId(id);
+        trainee.setUserId(id);
         trainee.setFirstName(firstName);
         trainee.setLastName(lastName);
         trainee.setDateOfBirth(dateOfBirth);
         trainee.setAddress(address);
         trainee.setIsActive(isActive);
-        // Username and password will be set by service layer
+        // Generate and set username and password
+        trainee.setUsername(credentialsGenerator.generateUsername(firstName, lastName));
+        trainee.setPassword(credentialsGenerator.generatePassword());
         
         traineeStorage.put(id, trainee);
         logger.debug("Added trainee: {} {}", firstName, lastName);
@@ -62,8 +66,9 @@ public class DataParser {
      * @param line CSV line to parse
      * @param trainerStorage Storage map to add the trainer
      * @param idGenerator ID generator for trainer
+     * @param credentialsGenerator Generator for username and password
      */
-    public static void parseAndAddTrainer(String line, Map<Long, Trainer> trainerStorage, AtomicLong idGenerator) {
+    public static void parseAndAddTrainer(String line, Map<Long, Trainer> trainerStorage, AtomicLong idGenerator, CredentialsGenerator credentialsGenerator) {
         String[] parts = line.split(",", -1);
         if (parts.length != 4) {
             logger.warn("Invalid trainer data format: {}", line);
@@ -77,12 +82,14 @@ public class DataParser {
         Boolean isActive = Boolean.parseBoolean(parts[3].trim());
         
         Trainer trainer = new Trainer();
-        trainer.setId(id);
+        trainer.setUserId(id);
         trainer.setFirstName(firstName);
         trainer.setLastName(lastName);
         trainer.setSpecialization(specialization);
         trainer.setIsActive(isActive);
-        // Username and password will be set by service layer
+        // Generate and set username and password
+        trainer.setUsername(credentialsGenerator.generateUsername(firstName, lastName));
+        trainer.setPassword(credentialsGenerator.generatePassword());
         
         trainerStorage.put(id, trainer);
         logger.debug("Added trainer: {} {}", firstName, lastName);

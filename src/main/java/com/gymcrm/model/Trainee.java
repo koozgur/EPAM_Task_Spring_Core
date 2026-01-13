@@ -7,23 +7,17 @@ import java.util.Objects;
  * Trainee entity representing a gym client/trainee.
  * Contains personal information, credentials, and activity status.
  */
-public class Trainee {
-    
-    private Long id;
-    private String firstName;
-    private String lastName;
-    private String username;
-    private String password;
+public class Trainee extends User {
+
     private LocalDate dateOfBirth;
     private String address;
-    private Boolean isActive;
 
     public Trainee() {
     }
 
-    public Trainee(Long id, String firstName, String lastName, String username, 
+    public Trainee(Long userId, String firstName, String lastName, String username,
                    String password, LocalDate dateOfBirth, String address, Boolean isActive) {
-        this.id = id;
+        this.userId = userId;
         this.firstName = firstName;
         this.lastName = lastName;
         this.username = username;
@@ -47,46 +41,6 @@ public class Trainee {
         this.isActive = isActive;
     }
     
-    public Long getId() {
-        return id;
-    }
-    
-    public void setId(Long id) {
-        this.id = id;
-    }
-    
-    public String getFirstName() {
-        return firstName;
-    }
-    
-    public void setFirstName(String firstName) {
-        this.firstName = firstName;
-    }
-    
-    public String getLastName() {
-        return lastName;
-    }
-    
-    public void setLastName(String lastName) {
-        this.lastName = lastName;
-    }
-    
-    public String getUsername() {
-        return username;
-    }
-    
-    public void setUsername(String username) {
-        this.username = username;
-    }
-    
-    public String getPassword() {
-        return password;
-    }
-    
-    public void setPassword(String password) {
-        this.password = password;
-    }
-    
     public LocalDate getDateOfBirth() {
         return dateOfBirth;
     }
@@ -103,32 +57,23 @@ public class Trainee {
         this.address = address;
     }
     
-    public Boolean getIsActive() {
-        return isActive;
-    }
-    
-    public void setIsActive(Boolean isActive) {
-        this.isActive = isActive;
-    }
-    
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         Trainee trainee = (Trainee) o;
-        return Objects.equals(id, trainee.id) && 
-               Objects.equals(username, trainee.username);
+        return Objects.equals(userId, trainee.userId);
     }
     
     @Override
     public int hashCode() {
-        return Objects.hash(id, username);
+        return Objects.hash(userId);
     }
     
     @Override
     public String toString() {
         return "Trainee{" +
-                "id=" + id +
+                "userId=" + userId +
                 ", firstName='" + firstName + '\'' +
                 ", lastName='" + lastName + '\'' +
                 ", username='" + username + '\'' +

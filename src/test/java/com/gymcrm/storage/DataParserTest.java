@@ -46,11 +46,6 @@ class DataParserTest {
         traineeIdGenerator = new AtomicLong(1);
         trainerIdGenerator = new AtomicLong(1);
         trainingIdGenerator = new AtomicLong(1);
-        
-        // Setup mock credentials generator
-        when(credentialsGenerator.generateUsername(anyString(), anyString()))
-            .thenAnswer(invocation -> invocation.getArgument(0) + "." + invocation.getArgument(1));
-        when(credentialsGenerator.generatePassword()).thenReturn("testPassword");
     }
 
     // ========== Trainee Parsing Tests ==========
@@ -60,6 +55,10 @@ class DataParserTest {
     void testParseAndAddTrainee_ValidData() {
         // Arrange
         String line = "John,Doe,1990-05-15,123 Main St,true";
+
+        when(credentialsGenerator.generateUsername(anyString(), anyString()))
+                .thenAnswer(invocation -> invocation.getArgument(0) + "." + invocation.getArgument(1));
+        when(credentialsGenerator.generatePassword()).thenReturn("testPassword");
 
         // Act
         DataParser.parseAndAddTrainee(line, traineeStorage, traineeIdGenerator, credentialsGenerator);
@@ -84,6 +83,10 @@ class DataParserTest {
         // Arrange
         String line = "Jane,Smith,,456 Oak Ave,false";
 
+        when(credentialsGenerator.generateUsername(anyString(), anyString()))
+                .thenAnswer(invocation -> invocation.getArgument(0) + "." + invocation.getArgument(1));
+        when(credentialsGenerator.generatePassword()).thenReturn("testPassword");
+
         // Act
         DataParser.parseAndAddTrainee(line, traineeStorage, traineeIdGenerator, credentialsGenerator);
 
@@ -96,6 +99,8 @@ class DataParserTest {
         assertNull(trainee.getDateOfBirth());
         assertEquals("456 Oak Ave", trainee.getAddress());
         assertFalse(trainee.getIsActive());
+        assertEquals("Jane.Smith", trainee.getUsername());
+        assertEquals("testPassword", trainee.getPassword());
     }
 
     @Test
@@ -103,6 +108,10 @@ class DataParserTest {
     void testParseAndAddTrainee_EmptyAddress() {
         // Arrange
         String line = "Bob,Johnson,1985-12-20,,true";
+
+        when(credentialsGenerator.generateUsername(anyString(), anyString()))
+                .thenAnswer(invocation -> invocation.getArgument(0) + "." + invocation.getArgument(1));
+        when(credentialsGenerator.generatePassword()).thenReturn("testPassword");
 
         // Act
         DataParser.parseAndAddTrainee(line, traineeStorage, traineeIdGenerator, credentialsGenerator);
@@ -116,6 +125,8 @@ class DataParserTest {
         assertEquals(LocalDate.of(1985, 12, 20), trainee.getDateOfBirth());
         assertEquals("", trainee.getAddress());
         assertTrue(trainee.getIsActive());
+        assertEquals("Bob.Johnson", trainee.getUsername());
+        assertEquals("testPassword", trainee.getPassword());
     }
 
     @Test
@@ -151,6 +162,10 @@ class DataParserTest {
         String line1 = "John,Doe,1990-05-15,123 Main St,true";
         String line2 = "Jane,Smith,1992-08-20,456 Oak Ave,false";
 
+        when(credentialsGenerator.generateUsername(anyString(), anyString()))
+                .thenAnswer(invocation -> invocation.getArgument(0) + "." + invocation.getArgument(1));
+        when(credentialsGenerator.generatePassword()).thenReturn("testPassword");
+
         // Act
         DataParser.parseAndAddTrainee(line1, traineeStorage, traineeIdGenerator, credentialsGenerator);
         DataParser.parseAndAddTrainee(line2, traineeStorage, traineeIdGenerator, credentialsGenerator);
@@ -161,6 +176,8 @@ class DataParserTest {
         assertNotNull(traineeStorage.get(2L));
         assertEquals("John", traineeStorage.get(1L).getFirstName());
         assertEquals("Jane", traineeStorage.get(2L).getFirstName());
+        assertEquals("John.Doe", traineeStorage.get(1L).getUsername());
+        assertEquals("Jane.Smith", traineeStorage.get(2L).getUsername());
     }
 
     @Test
@@ -168,6 +185,10 @@ class DataParserTest {
     void testParseAndAddTrainee_TrimWhitespace() {
         // Arrange
         String line = "  John  ,  Doe  ,  1990-05-15  ,  123 Main St  ,  true  ";
+
+        when(credentialsGenerator.generateUsername(anyString(), anyString()))
+                .thenAnswer(invocation -> invocation.getArgument(0) + "." + invocation.getArgument(1));
+        when(credentialsGenerator.generatePassword()).thenReturn("testPassword");
 
         // Act
         DataParser.parseAndAddTrainee(line, traineeStorage, traineeIdGenerator, credentialsGenerator);
@@ -178,6 +199,8 @@ class DataParserTest {
         assertEquals("John", trainee.getFirstName());
         assertEquals("Doe", trainee.getLastName());
         assertEquals("123 Main St", trainee.getAddress());
+        assertEquals("John.Doe", trainee.getUsername());
+        assertEquals("testPassword", trainee.getPassword());
     }
 
     // ========== Trainer Parsing Tests ==========
@@ -187,6 +210,10 @@ class DataParserTest {
     void testParseAndAddTrainer_ValidData() {
         // Arrange
         String line = "Alice,Williams,Yoga,true";
+
+        when(credentialsGenerator.generateUsername(anyString(), anyString()))
+                .thenAnswer(invocation -> invocation.getArgument(0) + "." + invocation.getArgument(1));
+        when(credentialsGenerator.generatePassword()).thenReturn("testPassword");
 
         // Act
         DataParser.parseAndAddTrainer(line, trainerStorage, trainerIdGenerator, credentialsGenerator);
@@ -210,6 +237,10 @@ class DataParserTest {
         // Arrange
         String line = "Bob,Brown,,false";
 
+        when(credentialsGenerator.generateUsername(anyString(), anyString()))
+                .thenAnswer(invocation -> invocation.getArgument(0) + "." + invocation.getArgument(1));
+        when(credentialsGenerator.generatePassword()).thenReturn("testPassword");
+
         // Act
         DataParser.parseAndAddTrainer(line, trainerStorage, trainerIdGenerator, credentialsGenerator);
 
@@ -221,6 +252,8 @@ class DataParserTest {
         assertEquals("Brown", trainer.getLastName());
         assertEquals("", trainer.getSpecialization());
         assertFalse(trainer.getIsActive());
+        assertEquals("Bob.Brown", trainer.getUsername());
+        assertEquals("testPassword", trainer.getPassword());
     }
 
     @Test
@@ -257,6 +290,10 @@ class DataParserTest {
         String line2 = "Bob,Brown,Pilates,false";
         String line3 = "Carol,Davis,CrossFit,true";
 
+        when(credentialsGenerator.generateUsername(anyString(), anyString()))
+                .thenAnswer(invocation -> invocation.getArgument(0) + "." + invocation.getArgument(1));
+        when(credentialsGenerator.generatePassword()).thenReturn("testPassword");
+
         // Act
         DataParser.parseAndAddTrainer(line1, trainerStorage, trainerIdGenerator, credentialsGenerator);
         DataParser.parseAndAddTrainer(line2, trainerStorage, trainerIdGenerator, credentialsGenerator);
@@ -270,6 +307,9 @@ class DataParserTest {
         assertEquals("Alice", trainerStorage.get(1L).getFirstName());
         assertEquals("Bob", trainerStorage.get(2L).getFirstName());
         assertEquals("Carol", trainerStorage.get(3L).getFirstName());
+        assertEquals("Alice.Williams", trainerStorage.get(1L).getUsername());
+        assertEquals("Bob.Brown", trainerStorage.get(2L).getUsername());
+        assertEquals("Carol.Davis", trainerStorage.get(3L).getUsername());
     }
 
     @Test
@@ -277,6 +317,10 @@ class DataParserTest {
     void testParseAndAddTrainer_TrimWhitespace() {
         // Arrange
         String line = "  Alice  ,  Williams  ,  Yoga  ,  true  ";
+
+        when(credentialsGenerator.generateUsername(anyString(), anyString()))
+                .thenAnswer(invocation -> invocation.getArgument(0) + "." + invocation.getArgument(1));
+        when(credentialsGenerator.generatePassword()).thenReturn("testPassword");
 
         // Act
         DataParser.parseAndAddTrainer(line, trainerStorage, trainerIdGenerator, credentialsGenerator);
@@ -287,6 +331,8 @@ class DataParserTest {
         assertEquals("Alice", trainer.getFirstName());
         assertEquals("Williams", trainer.getLastName());
         assertEquals("Yoga", trainer.getSpecialization());
+        assertEquals("Alice.Williams", trainer.getUsername());
+        assertEquals("testPassword", trainer.getPassword());
     }
 
     // ========== Training Parsing Tests ==========

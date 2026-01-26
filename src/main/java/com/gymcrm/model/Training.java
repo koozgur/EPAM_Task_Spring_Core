@@ -1,30 +1,47 @@
 package com.gymcrm.model;
 
+import javax.persistence.*;
 import java.time.LocalDate;
 import java.util.Objects;
 
-/**
- * Training entity representing a training session.
- * Contains training details and references to trainee and trainer.
- */
+
+@Entity
+@Table(name = "trainings")
 public class Training {
     
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-    private Long traineeId;
-    private Long trainerId;
+
+    @ManyToOne
+    @JoinColumn(name = "trainee_id", nullable = false)
+    private Trainee trainee;
+
+    @ManyToOne
+    @JoinColumn(name = "trainer_id", nullable = false)
+    private Trainer trainer;
+
+    @Column(name = "training_name", nullable = false, length = 100)
     private String trainingName;
-    private String trainingType;
+
+    @ManyToOne
+    @JoinColumn(name = "training_type_id", nullable = false)
+    private TrainingType trainingType;
+
+    @Column(name = "training_date", nullable = false)
     private LocalDate trainingDate;
+
+    @Column(name = "training_duration", nullable = false)
     private Integer trainingDuration; // Duration in minutes
 
     public Training() {
     }
 
-    public Training(Long id, Long traineeId, Long trainerId, String trainingName, 
-                    String trainingType, LocalDate trainingDate, Integer trainingDuration) {
+    public Training(Long id, Trainee trainee, Trainer trainer, String trainingName, 
+                    TrainingType trainingType, LocalDate trainingDate, Integer trainingDuration) {
         this.id = id;
-        this.traineeId = traineeId;
-        this.trainerId = trainerId;
+        this.trainee = trainee;
+        this.trainer = trainer;
         this.trainingName = trainingName;
         this.trainingType = trainingType;
         this.trainingDate = trainingDate;
@@ -34,10 +51,10 @@ public class Training {
     /**
      * Constructor without ID (for creating new trainings)
      */
-    public Training(Long traineeId, Long trainerId, String trainingName, 
-                    String trainingType, LocalDate trainingDate, Integer trainingDuration) {
-        this.traineeId = traineeId;
-        this.trainerId = trainerId;
+    public Training(Trainee trainee, Trainer trainer, String trainingName, 
+                    TrainingType trainingType, LocalDate trainingDate, Integer trainingDuration) {
+        this.trainee = trainee;
+        this.trainer = trainer;
         this.trainingName = trainingName;
         this.trainingType = trainingType;
         this.trainingDate = trainingDate;
@@ -50,22 +67,22 @@ public class Training {
     
     public void setId(Long id) {
         this.id = id;
-    } //TODO: check the security requirement
-    
-    public Long getTraineeId() {
-        return traineeId;
     }
     
-    public void setTraineeId(Long traineeId) {
-        this.traineeId = traineeId;
+    public Trainee getTrainee() {
+        return trainee;
     }
     
-    public Long getTrainerId() {
-        return trainerId;
+    public void setTrainee(Trainee trainee) {
+        this.trainee = trainee;
     }
     
-    public void setTrainerId(Long trainerId) {
-        this.trainerId = trainerId;
+    public Trainer getTrainer() {
+        return trainer;
+    }
+    
+    public void setTrainer(Trainer trainer) {
+        this.trainer = trainer;
     }
     
     public String getTrainingName() {
@@ -76,11 +93,11 @@ public class Training {
         this.trainingName = trainingName;
     }
     
-    public String getTrainingType() {
+    public TrainingType getTrainingType() {
         return trainingType;
     }
     
-    public void setTrainingType(String trainingType) {
+    public void setTrainingType(TrainingType trainingType) {
         this.trainingType = trainingType;
     }
     
@@ -117,10 +134,10 @@ public class Training {
     public String toString() {
         return "Training{" +
                 "id=" + id +
-                ", traineeId=" + traineeId +
-                ", trainerId=" + trainerId +
+                ", trainee=" + (trainee != null && trainee.getUser() != null ? trainee.getUser().getUsername() : null) +
+                ", trainer=" + (trainer != null && trainer.getUser() != null ? trainer.getUser().getUsername() : null) +
                 ", trainingName='" + trainingName + '\'' +
-                ", trainingType='" + trainingType + '\'' +
+                ", trainingType=" + (trainingType != null ? trainingType.getTrainingTypeName() : null) +
                 ", trainingDate=" + trainingDate +
                 ", trainingDuration=" + trainingDuration +
                 '}';

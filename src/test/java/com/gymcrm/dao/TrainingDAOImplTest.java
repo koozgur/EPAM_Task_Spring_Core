@@ -1,176 +1,265 @@
 package com.gymcrm.dao;
 
+import com.gymcrm.config.AppConfig;
+import com.gymcrm.model.Trainee;
+import com.gymcrm.model.Trainer;
 import com.gymcrm.model.Training;
-import com.gymcrm.storage.StorageService;
+import com.gymcrm.model.TrainingType;
+import com.gymcrm.model.User;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
+import org.springframework.transaction.annotation.Transactional;
 
+import javax.persistence.EntityManager;
+import javax.persistence.PersistenceContext;
 import java.time.LocalDate;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
+import static org.assertj.core.api.Assertions.assertThat;
 
-@ExtendWith(MockitoExtension.class)
+@ExtendWith(SpringExtension.class)
+@ContextConfiguration(classes = AppConfig.class)
+@Transactional
 class TrainingDAOImplTest {
 
-    @Mock
-    private StorageService storageService;
+    @Autowired
+    private TrainingDAO trainingDAO;
 
-    @InjectMocks
-    private TrainingDAOImpl trainingDAO;
-    private Map<Long, Training> trainingStorage;
-    private Training testTraining;
+    @PersistenceContext
+    private EntityManager entityManager;
 
+    //helpers
+    private TrainingType getOrCreateType(String name) {
+        return entityManager
+                .createQuery(
+                        "select t from TrainingType t where t.trainingTypeName = :name",
+                        TrainingType.class)
+                .setParameter("name", name)
+                .getResultStream()
+                .findFirst()
+                .orElseGet(() -> {
+                    TrainingType created = new TrainingType(name);
+                    entityManager.persist(created);
+                    return created;
+                });
+    }
+
+    private Trainee createTrainee(String username) {
+        return createTraineeWithName(username, "Trainee", "User");
+    }
+
+    private Trainee createTraineeWithName(String username, String firstName, String lastName) {
+        User user = new User(firstName, lastName, username, "pass", true);
+        Trainee trainee = new Trainee(user, LocalDate.of(1995, 1, 1), "Address");
+        entityManager.persist(trainee);
+        return trainee;
+    }
+
+    private Trainer createTrainer(String username, String firstName) {
+        TrainingType type = getOrCreateType("Cardio");
+        User user = new User(firstName, "Trainer", username, "pass", true);
+        Trainer trainer = new Trainer(user, type);
+        entityManager.persist(trainer);
+        return trainer;
+    }
+
+    //tests
     @BeforeEach
     void setUp() {
-        trainingStorage = new HashMap<>();
-        trainingDAO.setTrainingStorage(trainingStorage);
-        trainingDAO.setStorageService(storageService);
-        testTraining = new Training(1L, 10L, 20L, "Cardio Session", "Cardio", LocalDate.of(2023, 1, 1), 60);
+                getOrCreateType("Cardio");
+                getOrCreateType("Strength");
+        entityManager.flush();
+        entityManager.clear();
     }
 
     @Test
-    void testCreateTraining() {
-        Training newTraining = new Training(10L, 20L, "Yoga Session", "Yoga", LocalDate.of(2023, 1, 2), 60);
-        
-        when(storageService.generateTrainingId()).thenReturn(2L);
+    void create_ShouldPersistTraining() {
+        Trainee trainee = createTrainee("train.create.trainee");
+        Trainer trainer = createTrainer("train.create.trainer", "Coach");
+        TrainingType cardio = getOrCreateType("Cardio");
 
-        Training created = trainingDAO.create(newTraining);
+        Training training = new Training(
+                trainee,
+                trainer,
+                "Cardio Session",
+                cardio,
+                LocalDate.of(2024, 1, 10),
+                60);
 
-        assertNotNull(created.getId());
-        assertEquals(2L, created.getId());
-        assertTrue(trainingStorage.containsKey(2L));
-        assertEquals(newTraining, trainingStorage.get(2L));
-        verify(storageService).generateTrainingId();
+        Training created = trainingDAO.create(training);
+        entityManager.flush();
+        entityManager.clear();
+
+        assertThat(created.getId()).isNotNull();
+        Training found = entityManager.find(Training.class, created.getId());
+        assertThat(found).isNotNull();
+        assertThat(found.getTrainingName()).isEqualTo("Cardio Session");
     }
 
     @Test
-    void testCreateTrainingAlwaysGeneratesId() {
-        Training trainingWithId = new Training(10L, 20L, "Yoga Session", "Yoga", LocalDate.of(2023, 1, 2), 60);
-        
-        when(storageService.generateTrainingId()).thenReturn(1L);
+    void findById_ShouldReturnWhenExists() {
+        Trainee trainee = createTrainee("train.find.id.trainee");
+        Trainer trainer = createTrainer("train.find.id.trainer", "Coach");
+        TrainingType cardio = getOrCreateType("Cardio");
+        Training training = new Training(
+                trainee,
+                trainer,
+                "Find Session",
+                cardio,
+                LocalDate.of(2024, 2, 1),
+                45);
+        entityManager.persist(training);
+        entityManager.flush();
+        entityManager.clear();
 
-        Training created = trainingDAO.create(trainingWithId);
-
-        assertEquals(1L, created.getId());
-        assertTrue(trainingStorage.containsKey(1L));
-        assertFalse(trainingStorage.containsKey(999L));
-        verify(storageService).generateTrainingId();
+        Optional<Training> result = trainingDAO.findById(training.getId());
+        assertThat(result).isPresent();
+        assertThat(result.get().getTrainingName()).isEqualTo("Find Session");
     }
 
     @Test
-    void testFindByIdExistingTraining() {
-        trainingStorage.put(1L, testTraining);
-
-        Optional<Training> result = trainingDAO.findById(1L);
-
-        assertTrue(result.isPresent());
-        assertEquals(testTraining, result.get());
-    }
-
-    @Test
-    void testFindByIdNonExistentTraining() {
-        Optional<Training> result = trainingDAO.findById(99L);
-
-        assertFalse(result.isPresent());
-    }
-
-    @Test
-    void testFindByIdWithNullId() {
+    void findById_ShouldReturnEmptyWhenNull() {
         Optional<Training> result = trainingDAO.findById(null);
-
-        assertFalse(result.isPresent());
+        assertThat(result).isEmpty();
     }
 
     @Test
-    void testFindAllWithMultipleTrainings() {
-        trainingStorage.put(1L, testTraining);
-        Training training2 = new Training(2L, 10L, 20L, "Yoga Session", "Yoga", LocalDate.of(2023, 1, 2), 60);
-        trainingStorage.put(2L, training2);
+    void findAll_ShouldReturnAllTrainings() {
+        Trainee trainee = createTrainee("train.find.all.trainee");
+        Trainer trainer = createTrainer("train.find.all.trainer", "Coach");
+        TrainingType cardio = getOrCreateType("Cardio");
+        TrainingType strength = getOrCreateType("Strength");
+        Training t1 = new Training(trainee, trainer, "Session 1", cardio,
+                LocalDate.of(2024, 3, 1), 30);
+        Training t2 = new Training(trainee, trainer, "Session 2", strength,
+                LocalDate.of(2024, 3, 2), 40);
+        entityManager.persist(t1);
+        entityManager.persist(t2);
+        entityManager.flush();
+        entityManager.clear();
 
         List<Training> result = trainingDAO.findAll();
-
-        assertEquals(2, result.size());
-        assertTrue(result.contains(testTraining));
-        assertTrue(result.contains(training2));
+        assertThat(result).extracting(Training::getTrainingName)
+                .contains("Session 1", "Session 2");
     }
 
     @Test
-    void testFindAllWithEmptyStorage() {
-        List<Training> result = trainingDAO.findAll();
+    void findByTraineeId_ShouldReturnTrainings() {
+        Trainee trainee = createTrainee("train.by.trainee.id");
+        Trainer trainer = createTrainer("train.by.trainee.trainer", "Coach");
+        TrainingType cardio = getOrCreateType("Cardio");
+        TrainingType strength = getOrCreateType("Strength");
+        Training t1 = new Training(trainee, trainer, "Trainee A", cardio,
+                LocalDate.of(2024, 4, 1), 30);
+        Training t2 = new Training(trainee, trainer, "Trainee B", strength,
+                LocalDate.of(2024, 4, 2), 40);
+        entityManager.persist(t1);
+        entityManager.persist(t2);
+        entityManager.flush();
+        entityManager.clear();
 
-        assertTrue(result.isEmpty());
+        List<Training> result = trainingDAO.findByTraineeId(trainee.getId());
+        assertThat(result).hasSize(2);
     }
 
     @Test
-    void testFindByTraineeIdMultiple() {
-        trainingStorage.put(1L, testTraining); // traineeId = 10
-        Training training2 = new Training(2L, 10L, 21L, "Another Session", "Strength", LocalDate.of(2023, 1, 3), 45);
-        trainingStorage.put(2L, training2); // traineeId = 10
-        Training training3 = new Training(3L, 11L, 20L, "Other Trainee", "Cardio", LocalDate.of(2023, 1, 4), 30);
-        trainingStorage.put(3L, training3); // traineeId = 11
-
-        List<Training> result = trainingDAO.findByTraineeId(10L);
-
-        assertEquals(2, result.size());
-        assertTrue(result.contains(testTraining));
-        assertTrue(result.contains(training2));
-        assertFalse(result.contains(training3));
-    }
-
-    @Test
-    void testFindByTraineeIdNone() {
-        trainingStorage.put(1L, testTraining); // traineeId = 10
-
-        List<Training> result = trainingDAO.findByTraineeId(99L);
-
-        assertTrue(result.isEmpty());
-    }
-
-    @Test
-    void testFindByTraineeIdWithNullId() {
+    void findByTraineeId_ShouldReturnEmptyWhenNull() {
         List<Training> result = trainingDAO.findByTraineeId(null);
-
-        assertTrue(result.isEmpty());
+        assertThat(result).isEmpty();
     }
 
     @Test
-    void testFindByTrainerIdMultiple() {
-        trainingStorage.put(1L, testTraining); // trainerId = 20
-        Training training2 = new Training(2L, 11L, 20L, "Another Session", "Strength", LocalDate.of(2023, 1, 3), 45);
-        trainingStorage.put(2L, training2); // trainerId = 20
-        Training training3 = new Training(3L, 10L, 21L, "Other Trainer", "Cardio", LocalDate.of(2023, 1, 4), 30);
-        trainingStorage.put(3L, training3); // trainerId = 21
+    void findByTrainerId_ShouldReturnTrainings() {
+        Trainee trainee = createTrainee("train.by.trainer.trainee");
+        Trainer trainer = createTrainer("train.by.trainer.id", "Coach");
+        TrainingType cardio = getOrCreateType("Cardio");
+        TrainingType strength = getOrCreateType("Strength");
+        Training t1 = new Training(trainee, trainer, "Trainer A", cardio,
+                LocalDate.of(2024, 5, 1), 30);
+        Training t2 = new Training(trainee, trainer, "Trainer B", strength,
+                LocalDate.of(2024, 5, 2), 40);
+        entityManager.persist(t1);
+        entityManager.persist(t2);
+        entityManager.flush();
+        entityManager.clear();
 
-        List<Training> result = trainingDAO.findByTrainerId(20L);
-
-        assertEquals(2, result.size());
-        assertTrue(result.contains(testTraining));
-        assertTrue(result.contains(training2));
-        assertFalse(result.contains(training3));
+        List<Training> result = trainingDAO.findByTrainerId(trainer.getId());
+        assertThat(result).hasSize(2);
     }
 
     @Test
-    void testFindByTrainerIdNone() {
-        trainingStorage.put(1L, testTraining); // trainerId = 20
-
-        List<Training> result = trainingDAO.findByTrainerId(99L);
-
-        assertTrue(result.isEmpty());
-    }
-
-    @Test
-    void testFindByTrainerIdWithNullId() {
+    void findByTrainerId_ShouldReturnEmptyWhenNull() {
         List<Training> result = trainingDAO.findByTrainerId(null);
+        assertThat(result).isEmpty();
+    }
 
-        assertTrue(result.isEmpty());
+    @Test
+    void findByTraineeUsernameAndCriteria_ShouldFilterByDateTrainerAndType() {
+        Trainee trainee = createTrainee("trainee.criteria.user");
+        Trainer trainer1 = createTrainer("trainer.criteria.user", "Alex");
+        Trainer trainer2 = createTrainer("trainer.other.user", "Other");
+        TrainingType cardio = getOrCreateType("Cardio");
+        TrainingType strength = getOrCreateType("Strength");
+
+        Training matching = new Training(trainee, trainer1, "Match", cardio,
+                LocalDate.of(2024, 6, 10), 50);
+        Training outOfDate = new Training(trainee, trainer1, "Old", cardio,
+                LocalDate.of(2023, 12, 31), 30);
+        Training wrongTrainer = new Training(trainee, trainer2, "Wrong Trainer", cardio,
+                LocalDate.of(2024, 6, 12), 30);
+        Training wrongType = new Training(trainee, trainer1, "Wrong Type", strength,
+                LocalDate.of(2024, 6, 12), 30);
+
+        entityManager.persist(matching);
+        entityManager.persist(outOfDate);
+        entityManager.persist(wrongTrainer);
+        entityManager.persist(wrongType);
+        entityManager.flush();
+        entityManager.clear();
+
+        List<Training> result = trainingDAO.findByTraineeUsernameAndCriteria(
+                "trainee.criteria.user",
+                LocalDate.of(2024, 6, 1),
+                LocalDate.of(2024, 6, 30),
+                "alex",
+                "Cardio");
+
+        assertThat(result).extracting(Training::getTrainingName)
+                .containsExactly("Match");
+    }
+
+    @Test
+    void findByTrainerUsernameAndCriteria_ShouldFilterByDateAndTraineeName() {
+        Trainee trainee1 = createTrainee("trainee.criteria.one");
+        Trainee trainee2 = createTraineeWithName("trainee.criteria.two", "Sara", "Other");
+        Trainer trainer = createTrainer("trainer.criteria.main", "Coach");
+        TrainingType cardio = getOrCreateType("Cardio");
+
+        Training matching = new Training(trainee1, trainer, "Match", cardio,
+                LocalDate.of(2024, 7, 10), 50);
+        Training wrongTrainee = new Training(trainee2, trainer, "Wrong Trainee", cardio,
+                LocalDate.of(2024, 7, 11), 50);
+        Training outOfDate = new Training(trainee1, trainer, "Old", cardio,
+                LocalDate.of(2023, 7, 11), 50);
+
+        entityManager.persist(matching);
+        entityManager.persist(wrongTrainee);
+        entityManager.persist(outOfDate);
+        entityManager.flush();
+        entityManager.clear();
+
+        List<Training> result = trainingDAO.findByTrainerUsernameAndCriteria(
+                "trainer.criteria.main",
+                LocalDate.of(2024, 7, 1),
+                LocalDate.of(2024, 7, 31),
+                "Trainee");
+
+        assertThat(result).extracting(Training::getTrainingName)
+                .containsExactly("Match");
     }
 }

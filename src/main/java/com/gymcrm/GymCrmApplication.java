@@ -1,6 +1,8 @@
 package com.gymcrm;
 
 import com.gymcrm.config.AppConfig;
+import com.gymcrm.dao.TrainingTypeDAO;
+import com.gymcrm.model.TrainingType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.ApplicationContext;
@@ -24,6 +26,12 @@ public class GymCrmApplication {
         logger.info("Available beans:");
         for (String beanName : beanNames) {
             logger.info("  - {}", beanName);
+        }
+
+        TrainingTypeDAO trainingTypeDAO = context.getBean(TrainingTypeDAO.class);
+        logger.info("Prepopulated Training Types:");
+        for (TrainingType type : trainingTypeDAO.findAll()) {
+            logger.info("  - {}", type.getTrainingTypeName());
         }
         
         logger.info("Gym CRM Application is ready!");

@@ -25,6 +25,14 @@ public class Trainee {
     @Column(name = "address", length = 255)
     private String address;
 
+    @ManyToMany
+    @JoinTable(
+            name = "trainee_trainer",
+            joinColumns = @JoinColumn(name = "trainee_id"),
+            inverseJoinColumns = @JoinColumn(name = "trainer_id")
+    )
+    private List<Trainer> trainers = new ArrayList<>();
+
     @OneToMany(mappedBy = "trainee", cascade = CascadeType.REMOVE, orphanRemoval = true)
     private List<Training> trainings = new ArrayList<>();
 
@@ -77,6 +85,14 @@ public class Trainee {
 
     public void setAddress(String address) {
         this.address = address;
+    }
+
+    public List<Trainer> getTrainers() {
+        return trainers;
+    }
+
+    public void setTrainers(List<Trainer> trainers) {
+        this.trainers = trainers;
     }
 
     public List<Training> getTrainings() {

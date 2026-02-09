@@ -22,6 +22,9 @@ public class Trainer {
     @JoinColumn(name = "specialization_id")
     private TrainingType specialization;
 
+    @ManyToMany(mappedBy = "trainers")
+    private List<Trainee> trainees = new ArrayList<>();
+
     @OneToMany(mappedBy = "trainer", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Training> trainings = new ArrayList<>();
 
@@ -64,6 +67,14 @@ public class Trainer {
 
     public void setSpecialization(TrainingType specialization) {
         this.specialization = specialization;
+    }
+
+    public List<Trainee> getTrainees() {
+        return trainees;
+    }
+
+    public void setTrainees(List<Trainee> trainees) {
+        this.trainees = trainees;
     }
 
     public List<Training> getTrainings() {

@@ -1,51 +1,48 @@
 package com.gymcrm.service;
 
 import com.gymcrm.model.Trainee;
+import com.gymcrm.model.Trainer;
 
 import java.util.List;
 import java.util.Optional;
 
-/**
- * Service interface for managing Trainee entities.
- */
 public interface TraineeService {
-    
-    /**
-     * Create a new trainee profile.
-     * Generates username and password for the trainee.
-     * 
-     * @param trainee the trainee to create
-     * @return the created trainee with generated ID, username, and password
-     */
+
     Trainee createTrainee(Trainee trainee);
-    
+
     /**
-     * Update an existing trainee profile.
-     * 
-     * @param trainee the trainee to update
-     * @return the updated trainee
+     * Authenticate a trainee by username and password matching.
+     * Must be called before any trainee operation except profile creation.
+     *
+     * @param username the trainee username
+     * @param password the trainee password
+     * @return true if credentials match, false otherwise
      */
+    boolean authenticate(String username, String password);
+
+    Optional<Trainee> getTraineeByUsername(String username);
+
     Trainee updateTrainee(Trainee trainee);
-    
+
+    void changePassword(String username, String oldPassword, String newPassword);
+
+    void activateTrainee(String username);
+
+    void deactivateTrainee(String username);
+
+    void deleteTraineeByUsername(String username);
+
     /**
-     * Delete a trainee profile by ID.
-     * 
-     * @param id the trainee ID
+     * Update trainee's trainers list.
+     * Replaces the current trainer assignments with the provided list.
+     *
+     * @param traineeUsername the trainee's username
+     * @param trainerUsernames list of trainer usernames to assign
+     * @return the updated list of assigned trainers
      */
-    void deleteTrainee(Long id);
-    
-    /**
-     * Get a trainee profile by ID.
-     * 
-     * @param id the trainee ID
-     * @return Optional containing the trainee if found
-     */
+    List<Trainer> updateTraineeTrainersList(String traineeUsername, List<String> trainerUsernames);
+
     Optional<Trainee> getTrainee(Long id);
-    
-    /**
-     * Get all trainee profiles.
-     * 
-     * @return list of all trainees
-     */
+
     List<Trainee> getAllTrainees();
 }

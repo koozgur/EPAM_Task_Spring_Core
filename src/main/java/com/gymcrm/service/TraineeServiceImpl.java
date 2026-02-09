@@ -1,13 +1,18 @@
 package com.gymcrm.service;
 
 import com.gymcrm.dao.TraineeDAO;
+import com.gymcrm.dao.TrainerDAO;
 import com.gymcrm.model.Trainee;
+import com.gymcrm.model.Trainer;
+import com.gymcrm.model.User;
 import com.gymcrm.util.CredentialsGenerator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -17,6 +22,7 @@ public class TraineeServiceImpl implements TraineeService {
     private static final Logger logger = LoggerFactory.getLogger(TraineeServiceImpl.class);
 
     private TraineeDAO traineeDAO;
+    private TrainerDAO trainerDAO;
     private CredentialsGenerator credentialsGenerator;
 
     @Autowired
@@ -25,99 +31,221 @@ public class TraineeServiceImpl implements TraineeService {
     }
 
     @Autowired
+    public void setTrainerDAO(TrainerDAO trainerDAO) {
+        this.trainerDAO = trainerDAO;
+    }
+
+    @Autowired
     public void setCredentialsGenerator(CredentialsGenerator credentialsGenerator) {
         this.credentialsGenerator = credentialsGenerator;
     }
 
     @Override
+    @Transactional
     public Trainee createTrainee(Trainee trainee) {
-        // Input validation
-        if (trainee == null) {
-            logger.warn("Rejected trainee creation for null trainee");
-            throw new IllegalArgumentException("Trainee cannot be null");
-        }
-        if (trainee.getFirstName() == null || trainee.getFirstName().trim().isEmpty()) {
-            logger.warn("Rejected trainee creation for null/empty first name");
-            throw new IllegalArgumentException("Trainee first name cannot be null or empty");
-        }
-        if (trainee.getLastName() == null || trainee.getLastName().trim().isEmpty()) {
-            logger.warn("Rejected trainee creation for null/empty last name");
-            throw new IllegalArgumentException("Trainee last name cannot be null or empty");
-        }
+        validateRequiredFields(trainee);
 
-        // Service owns the business logic of creation, DAO just stores the object
-        String username = credentialsGenerator.generateUsername(trainee.getFirstName(), trainee.getLastName());
+        User user = trainee.getUser();
+        String username = credentialsGenerator.generateUsername(user.getFirstName(), user.getLastName());
         String password = credentialsGenerator.generatePassword();
-        
-        trainee.setUsername(username);
-        trainee.setPassword(password);
-        
-        Trainee createdTrainee = traineeDAO.create(trainee);
-        logger.info("Trainee created id={} username={}", createdTrainee.getUserId(), createdTrainee.getUsername());
+        user.setUsername(username);
+        user.setPassword(password);
+        user.setIsActive(true);
 
-        return createdTrainee;
+        Trainee created = traineeDAO.create(trainee);
+        logger.info("Created trainee profile with username: {}", username);
+        return created;
     }
 
     @Override
+    @Transactional
     public Trainee updateTrainee(Trainee trainee) {
-        // Input validation
-        if (trainee == null) {
-            logger.warn("Rejected trainee update for null trainee");
-            throw new IllegalArgumentException("Trainee cannot be null");
-        }
-        if (trainee.getUserId() == null) {
-            logger.warn("Rejected trainee update for null trainee ID");
-            throw new IllegalArgumentException("Trainee ID cannot be null for update");
-        }
+        validateRequiredFields(trainee);
 
-        try {
-            Trainee updated = traineeDAO.update(trainee);
-            logger.info("Trainee updated id={}", updated.getUserId());
-            return updated;
+        String username = trainee.getUser().getUsername();
+        Trainee existing = traineeDAO.findByUsername(username)
+                .orElseThrow(() -> new IllegalArgumentException(
+                        "Trainee not found with username: " + username));
 
-        } catch (IllegalArgumentException e) {
-            // Expected business failure (not found, invalid state)
-            logger.warn("Update failed: trainee id={} not found", trainee.getUserId());
-            throw e;
-        }
+        User existingUser = existing.getUser();
+        existingUser.setFirstName(trainee.getUser().getFirstName());
+        existingUser.setLastName(trainee.getUser().getLastName());
+        existingUser.setIsActive(trainee.getUser().getIsActive());
+        existing.setDateOfBirth(trainee.getDateOfBirth());
+        existing.setAddress(trainee.getAddress());
+
+        Trainee updated = traineeDAO.update(existing);
+        logger.info("Updated trainee profile for username: {}", username);
+        return updated;
     }
 
     @Override
-    public void deleteTrainee(Long id) {
-        if (id == null) {
-            logger.warn("Rejected trainee deletion for null trainee ID");
-            throw new IllegalArgumentException("Trainee ID cannot be null");
+    @Transactional
+    public void deleteTraineeByUsername(String username) {
+        if (username == null) {
+            throw new IllegalArgumentException("Username must not be null");
         }
-        try{
-            traineeDAO.delete(id);
-            logger.info("Trainee deleted id={}", id);
-        }
-        catch (IllegalArgumentException e){
-            logger.warn("Trainee not found for id={}", id);
-            throw e;
-        }
+
+        Trainee trainee = traineeDAO.findByUsername(username)
+                .orElseThrow(() -> new IllegalArgumentException(
+                        "Trainee not found with username: " + username));
+
+        traineeDAO.delete(trainee.getId());
+        logger.info("Deleted trainee profile for username: {}", username);
     }
 
     @Override
+    @Transactional(readOnly = true)
     public Optional<Trainee> getTrainee(Long id) {
-        if (id == null) {
-            logger.warn("Rejected trainee retrieval for null trainee ID");
-            throw new IllegalArgumentException("Trainee ID cannot be null");
-        }
-        
-        Optional<Trainee> trainee = traineeDAO.findById(id);
-        if (trainee.isPresent()) {
-            logger.debug("Trainee found id={}", id);
-        } else {
-            logger.debug("Trainee not found id={}", id);
-        }
-        return trainee;
+        return traineeDAO.findById(id);
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<Trainee> getAllTrainees() {
-        List<Trainee> trainees = traineeDAO.findAll();
-        logger.debug("Found {} trainees", trainees.size());
-        return trainees;
+        return traineeDAO.findAll();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public boolean authenticate(String username, String password) {
+        if (username == null || password == null) {
+            logger.warn("Authentication attempt with null credentials");
+            return false;
+        }
+
+        Optional<Trainee> traineeOpt = traineeDAO.findByUsername(username);
+        if (traineeOpt.isEmpty()) {
+            logger.warn("Authentication failed: trainee not found for username: {}", username);
+            return false;
+        }
+
+        boolean matches = password.equals(traineeOpt.get().getUser().getPassword());
+        if (!matches) {
+            logger.warn("Authentication failed: password mismatch for username: {}", username);
+        }
+        return matches;
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Optional<Trainee> getTraineeByUsername(String username) {
+        if (username == null) {
+            throw new IllegalArgumentException("Username must not be null");
+        }
+        Optional<Trainee> result = traineeDAO.findByUsername(username);
+        logger.info("Selected trainee by username: {}, found: {}", username, result.isPresent());
+        return result;
+    }
+
+    @Override
+    @Transactional
+    public void changePassword(String username, String oldPassword, String newPassword) {
+        if (username == null || oldPassword == null || newPassword == null) {
+            throw new IllegalArgumentException(
+                    "Username, old password, and new password must not be null");
+        }
+
+        Trainee trainee = traineeDAO.findByUsername(username)
+                .orElseThrow(() -> new IllegalArgumentException(
+                        "Trainee not found with username: " + username));
+
+        if (!oldPassword.equals(trainee.getUser().getPassword())) {
+            throw new IllegalArgumentException("Old password does not match");
+        }
+
+        trainee.getUser().setPassword(newPassword);
+        traineeDAO.update(trainee);
+        logger.info("Password changed for trainee: {}", username);
+    }
+
+    @Override
+    @Transactional
+    public void activateTrainee(String username) {
+        if (username == null) {
+            throw new IllegalArgumentException("Username must not be null");
+        }
+
+        Trainee trainee = traineeDAO.findByUsername(username)
+                .orElseThrow(() -> new IllegalArgumentException(
+                        "Trainee not found with username: " + username));
+
+        if (trainee.getUser().getIsActive()) {
+            throw new IllegalStateException("Trainee is already active: " + username);
+        }
+
+        trainee.getUser().setIsActive(true);
+        traineeDAO.update(trainee);
+        logger.info("Activated trainee: {}", username);
+    }
+
+    @Override
+    @Transactional
+    public void deactivateTrainee(String username) {
+        if (username == null) {
+            throw new IllegalArgumentException("Username must not be null");
+        }
+
+        Trainee trainee = traineeDAO.findByUsername(username)
+                .orElseThrow(() -> new IllegalArgumentException(
+                        "Trainee not found with username: " + username));
+
+        if (!trainee.getUser().getIsActive()) {
+            throw new IllegalStateException("Trainee is already inactive: " + username);
+        }
+
+        trainee.getUser().setIsActive(false);
+        traineeDAO.update(trainee);
+        logger.info("Deactivated trainee: {}", username);
+    }
+
+    @Override
+    @Transactional
+    public List<Trainer> updateTraineeTrainersList(String traineeUsername, List<String> trainerUsernames) {
+        if (traineeUsername == null) {
+            throw new IllegalArgumentException("Trainee username must not be null");
+        }
+        if (trainerUsernames == null) {
+            throw new IllegalArgumentException("Trainer usernames list must not be null");
+        }
+
+        Trainee trainee = traineeDAO.findByUsername(traineeUsername)
+                .orElseThrow(() -> new IllegalArgumentException(
+                        "Trainee not found with username: " + traineeUsername));
+
+        List<Trainer> newTrainers = new ArrayList<>();
+        for (String trainerUsername : trainerUsernames) {
+            Trainer trainer = trainerDAO.findByUsername(trainerUsername)
+                    .orElseThrow(() -> new IllegalArgumentException(
+                            "Trainer not found with username: " + trainerUsername));
+            newTrainers.add(trainer);
+        }
+
+        trainee.getTrainers().clear();
+        trainee.getTrainers().addAll(newTrainers);
+        traineeDAO.update(trainee);
+
+        logger.info("Updated trainers list for trainee: {}, trainers count: {}",
+                traineeUsername, newTrainers.size());
+        return newTrainers;
+    }
+
+    /**
+     * Validates that the Trainee and its User carry all required fields.
+     */
+    private void validateRequiredFields(Trainee trainee) {
+        if (trainee == null) {
+            throw new IllegalArgumentException("Trainee must not be null");
+        }
+        if (trainee.getUser() == null) {
+            throw new IllegalArgumentException("Trainee must have a User");
+        }
+        User user = trainee.getUser();
+        if (user.getFirstName() == null || user.getFirstName().isBlank()) {
+            throw new IllegalArgumentException("First name is required");
+        }
+        if (user.getLastName() == null || user.getLastName().isBlank()) {
+            throw new IllegalArgumentException("Last name is required");
+        }
     }
 }

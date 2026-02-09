@@ -3,9 +3,12 @@ package com.gymcrm.service;
 import com.gymcrm.dao.TraineeDAO;
 import com.gymcrm.dao.TrainerDAO;
 import com.gymcrm.dao.TrainingDAO;
+import com.gymcrm.dao.TrainingTypeDAO;
 import com.gymcrm.model.Trainee;
 import com.gymcrm.model.Trainer;
 import com.gymcrm.model.Training;
+import com.gymcrm.model.TrainingType;
+import com.gymcrm.model.User;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -15,8 +18,6 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.LocalDate;
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
@@ -37,259 +38,228 @@ class TrainingServiceImplTest {
     @Mock
     private TrainerDAO trainerDAO;
 
+    @Mock
+    private TrainingTypeDAO trainingTypeDAO;
+
     @InjectMocks
     private TrainingServiceImpl trainingService;
 
-    private Training testTraining;
     private Trainee testTrainee;
     private Trainer testTrainer;
+    private TrainingType testTrainingType;
 
     @BeforeEach
     void setUp() {
+        User traineeUser = new User();
+        traineeUser.setUsername("trainee.user");
+        traineeUser.setFirstName("John");
+        traineeUser.setLastName("Doe");
+
+        User trainerUser = new User();
+        trainerUser.setUsername("trainer.user");
+        trainerUser.setFirstName("Mike");
+        trainerUser.setLastName("Coach");
+
         testTrainee = new Trainee();
-        testTrainee.setUserId(10L);
-        testTrainee.setFirstName("John");
-        testTrainee.setLastName("Doe");
+        testTrainee.setId(10L);
+        testTrainee.setUser(traineeUser);
 
         testTrainer = new Trainer();
-        testTrainer.setUserId(20L);
-        testTrainer.setFirstName("Mike");
-        testTrainer.setLastName("Coach");
+        testTrainer.setId(20L);
+        testTrainer.setUser(trainerUser);
 
-        testTraining = new Training();
-        testTraining.setId(1L);
-        testTraining.setTraineeId(10L);
-        testTraining.setTrainerId(20L);
-        testTraining.setTrainingName("Cardio Session");
-        testTraining.setTrainingType("Cardio");
-        testTraining.setTrainingDate(LocalDate.of(2023, 6, 15));
-        testTraining.setTrainingDuration(60);
+        testTrainingType = new TrainingType("Cardio");
+        testTrainingType.setId(5L);
     }
 
-    // ========== createTraining Tests ==========
-
     @Test
-    @DisplayName("Should create training successfully when trainee and trainer exist")
-    void testCreateTraining_Success() {
-        // Arrange
-        Training newTraining = new Training();
-        newTraining.setTraineeId(10L);
-        newTraining.setTrainerId(20L);
-        newTraining.setTrainingName("Yoga Session");
-        newTraining.setTrainingType("Yoga");
-        newTraining.setTrainingDate(LocalDate.of(2023, 7, 1));
-        newTraining.setTrainingDuration(45);
+    @DisplayName("createTraining: resolves trainee, trainer, and type by id")
+    void createTraining_success() {
+        Training training = new Training();
+        training.setTrainee(testTrainee);
+        training.setTrainer(testTrainer);
+        TrainingType inputType = new TrainingType();
+        inputType.setId(5L);
+        training.setTrainingType(inputType);
+        training.setTrainingName("Cardio Session");
+        training.setTrainingDate(LocalDate.of(2025, 1, 10));
+        training.setTrainingDuration(60);
 
-        when(traineeDAO.findById(10L)).thenReturn(Optional.of(testTrainee));
-        when(trainerDAO.findById(20L)).thenReturn(Optional.of(testTrainer));
-        when(trainingDAO.create(any(Training.class))).thenAnswer(invocation -> {
-            Training t = invocation.getArgument(0);
+        when(traineeDAO.findByUsername("trainee.user")).thenReturn(Optional.of(testTrainee));
+        when(trainerDAO.findByUsername("trainer.user")).thenReturn(Optional.of(testTrainer));
+        when(trainingTypeDAO.findById(5L)).thenReturn(Optional.of(testTrainingType));
+        when(trainingDAO.create(any(Training.class))).thenAnswer(inv -> {
+            Training t = inv.getArgument(0);
             t.setId(1L);
             return t;
         });
 
-        // Act
-        Training result = trainingService.createTraining(newTraining);
+        Training result = trainingService.createTraining(training);
 
-        // Assert
         assertNotNull(result);
         assertEquals(1L, result.getId());
-        assertEquals("Yoga Session", result.getTrainingName());
-        verify(traineeDAO).findById(10L);
-        verify(trainerDAO).findById(20L);
-        verify(trainingDAO).create(newTraining);
+        assertEquals(testTrainee, result.getTrainee());
+        assertEquals(testTrainer, result.getTrainer());
+        assertEquals(testTrainingType, result.getTrainingType());
+        verify(trainingDAO).create(training);
     }
 
     @Test
-    @DisplayName("Should throw exception when trainee does not exist")
-    void testCreateTraining_ThrowsWhenTraineeNotFound() {
-        // Arrange
-        Training newTraining = new Training();
-        newTraining.setTraineeId(99L);
-        newTraining.setTrainerId(20L);
-        newTraining.setTrainingName("Test Session");
-        newTraining.setTrainingDate(LocalDate.of(2023, 7, 1));
-        newTraining.setTrainingDuration(60);
+    @DisplayName("createTraining: trainee not found")
+    void createTraining_traineeNotFound() {
+        Training training = new Training();
+        training.setTrainee(testTrainee);
+        training.setTrainer(testTrainer);
+        training.setTrainingType(testTrainingType);
+        training.setTrainingName("Cardio Session");
+        training.setTrainingDate(LocalDate.of(2025, 1, 10));
+        training.setTrainingDuration(60);
 
-        when(traineeDAO.findById(99L)).thenReturn(Optional.empty());
+        when(traineeDAO.findByUsername("trainee.user")).thenReturn(Optional.empty());
 
-        // Act & Assert
-        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, 
-            () -> trainingService.createTraining(newTraining));
-        
-        assertEquals("Trainee not found with ID: 99", exception.getMessage());
-        verify(traineeDAO).findById(99L);
-        verify(trainerDAO, never()).findById(any());
+        assertThrows(IllegalArgumentException.class,
+                () -> trainingService.createTraining(training));
+        verify(trainerDAO, never()).findByUsername(any());
         verify(trainingDAO, never()).create(any());
     }
 
     @Test
-    @DisplayName("Should throw exception when trainer does not exist")
-    void testCreateTraining_ThrowsWhenTrainerNotFound() {
-        // Arrange
-        Training newTraining = new Training();
-        newTraining.setTraineeId(10L);
-        newTraining.setTrainerId(99L);
-        newTraining.setTrainingName("Test Session");
-        newTraining.setTrainingDate(LocalDate.of(2023, 7, 1));
-        newTraining.setTrainingDuration(60);
+    @DisplayName("createTraining: trainer not found")
+    void createTraining_trainerNotFound() {
+        Training training = new Training();
+        training.setTrainee(testTrainee);
+        training.setTrainer(testTrainer);
+        training.setTrainingType(testTrainingType);
+        training.setTrainingName("Cardio Session");
+        training.setTrainingDate(LocalDate.of(2025, 1, 10));
+        training.setTrainingDuration(60);
 
-        when(traineeDAO.findById(10L)).thenReturn(Optional.of(testTrainee));
-        when(trainerDAO.findById(99L)).thenReturn(Optional.empty());
+        when(traineeDAO.findByUsername("trainee.user")).thenReturn(Optional.of(testTrainee));
+        when(trainerDAO.findByUsername("trainer.user")).thenReturn(Optional.empty());
 
-        // Act & Assert
-        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, 
-            () -> trainingService.createTraining(newTraining));
-        
-        assertEquals("Trainer not found with ID: 99", exception.getMessage());
-        verify(traineeDAO).findById(10L);
-        verify(trainerDAO).findById(99L);
+        assertThrows(IllegalArgumentException.class,
+                () -> trainingService.createTraining(training));
         verify(trainingDAO, never()).create(any());
     }
 
-    // ========== getTraining Tests ==========
+    @Test
+    @DisplayName("createTraining: training type not found by id")
+    void createTraining_typeNotFoundById() {
+        Training training = new Training();
+        training.setTrainee(testTrainee);
+        training.setTrainer(testTrainer);
+        TrainingType inputType = new TrainingType();
+        inputType.setId(5L);
+        training.setTrainingType(inputType);
+        training.setTrainingName("Cardio Session");
+        training.setTrainingDate(LocalDate.of(2025, 1, 10));
+        training.setTrainingDuration(60);
+
+        when(traineeDAO.findByUsername("trainee.user")).thenReturn(Optional.of(testTrainee));
+        when(trainerDAO.findByUsername("trainer.user")).thenReturn(Optional.of(testTrainer));
+        when(trainingTypeDAO.findById(5L)).thenReturn(Optional.empty());
+
+        assertThrows(IllegalArgumentException.class,
+                () -> trainingService.createTraining(training));
+        verify(trainingDAO, never()).create(any());
+    }
 
     @Test
-    @DisplayName("Should return training when found")
-    void testGetTraining_Found() {
-        // Arrange
-        when(trainingDAO.findById(1L)).thenReturn(Optional.of(testTraining));
+    @DisplayName("createTraining: missing training name rejected")
+    void createTraining_missingName() {
+        Training training = new Training();
+        training.setTrainee(testTrainee);
+        training.setTrainer(testTrainer);
+        training.setTrainingType(testTrainingType);
+        training.setTrainingName(" ");
+        training.setTrainingDate(LocalDate.of(2025, 1, 10));
+        training.setTrainingDuration(60);
 
-        // Act
-        Optional<Training> result = trainingService.getTraining(1L);
+        assertThrows(IllegalArgumentException.class,
+                () -> trainingService.createTraining(training));
+        verifyNoInteractions(trainingDAO);
+    }
 
-        // Assert
+    @Test
+    @DisplayName("getTraineeTrainingsByCriteria: null username rejected")
+    void getTraineeTrainingsByCriteria_nullUsername() {
+        assertThrows(IllegalArgumentException.class,
+                () -> trainingService.getTraineeTrainingsByCriteria(
+                        null, LocalDate.now(), LocalDate.now(), null, null));
+    }
+
+    @Test
+    @DisplayName("getTrainerTrainingsByCriteria: delegates to DAO")
+    void getTrainerTrainingsByCriteria_delegates() {
+        List<Training> trainings = List.of(new Training());
+        when(trainingDAO.findByTrainerUsernameAndCriteria(
+                "trainer.user", LocalDate.of(2025, 1, 1), LocalDate.of(2025, 12, 31), "John"))
+                .thenReturn(trainings);
+
+        List<Training> result = trainingService.getTrainerTrainingsByCriteria(
+                "trainer.user", LocalDate.of(2025, 1, 1), LocalDate.of(2025, 12, 31), "John");
+
+        assertEquals(trainings, result);
+    }
+
+    @Test
+    @DisplayName("getTraining: returns training when found")
+    void getTraining_found() {
+        Training training = new Training();
+        training.setId(7L);
+        when(trainingDAO.findById(7L)).thenReturn(Optional.of(training));
+
+        Optional<Training> result = trainingService.getTraining(7L);
+
         assertTrue(result.isPresent());
-        assertEquals(testTraining, result.get());
-        verify(trainingDAO).findById(1L);
+        assertEquals(training, result.get());
+        verify(trainingDAO).findById(7L);
     }
 
     @Test
-    @DisplayName("Should return empty Optional when training not found")
-    void testGetTraining_NotFound() {
-        // Arrange
+    @DisplayName("getTraining: returns empty when not found")
+    void getTraining_notFound() {
         when(trainingDAO.findById(99L)).thenReturn(Optional.empty());
 
-        // Act
         Optional<Training> result = trainingService.getTraining(99L);
 
-        // Assert
-        assertFalse(result.isPresent());
+        assertTrue(result.isEmpty());
         verify(trainingDAO).findById(99L);
     }
 
-    // ========== getAllTrainings Tests ==========
-
     @Test
-    @DisplayName("Should return list of all trainings")
-    void testGetAllTrainings_WithData() {
-        // Arrange
-        Training training2 = new Training();
-        training2.setId(2L);
-        training2.setTraineeId(10L);
-        training2.setTrainerId(21L);
-        training2.setTrainingName("Strength Session");
-
-        List<Training> trainings = Arrays.asList(testTraining, training2);
+    @DisplayName("getAllTrainings: delegates to DAO")
+    void getAllTrainings_delegates() {
+        List<Training> trainings = List.of(new Training(), new Training());
         when(trainingDAO.findAll()).thenReturn(trainings);
 
-        // Act
         List<Training> result = trainingService.getAllTrainings();
 
-        // Assert
-        assertEquals(2, result.size());
-        assertTrue(result.contains(testTraining));
-        assertTrue(result.contains(training2));
+        assertEquals(trainings, result);
         verify(trainingDAO).findAll();
     }
 
     @Test
-    @DisplayName("Should return empty list when no trainings exist")
-    void testGetAllTrainings_EmptyList() {
-        // Arrange
-        when(trainingDAO.findAll()).thenReturn(Collections.emptyList());
-
-        // Act
-        List<Training> result = trainingService.getAllTrainings();
-
-        // Assert
-        assertTrue(result.isEmpty());
-        verify(trainingDAO).findAll();
-    }
-
-    // ========== getTrainingsByTrainee Tests ==========
-
-    @Test
-    @DisplayName("Should return trainings for given trainee ID")
-    void testGetTrainingsByTrainee_WithData() {
-        // Arrange
-        Training training2 = new Training();
-        training2.setId(2L);
-        training2.setTraineeId(10L);
-        training2.setTrainerId(21L);
-        training2.setTrainingName("Another Session");
-
-        List<Training> trainings = Arrays.asList(testTraining, training2);
+    @DisplayName("getTrainingsByTrainee: delegates to DAO")
+    void getTrainingsByTrainee_delegates() {
+        List<Training> trainings = List.of(new Training());
         when(trainingDAO.findByTraineeId(10L)).thenReturn(trainings);
 
-        // Act
         List<Training> result = trainingService.getTrainingsByTrainee(10L);
 
-        // Assert
-        assertEquals(2, result.size());
-        assertTrue(result.stream().allMatch(t -> t.getTraineeId().equals(10L)));
+        assertEquals(trainings, result);
         verify(trainingDAO).findByTraineeId(10L);
     }
 
     @Test
-    @DisplayName("Should return empty list when trainee has no trainings")
-    void testGetTrainingsByTrainee_EmptyList() {
-        // Arrange
-        when(trainingDAO.findByTraineeId(99L)).thenReturn(Collections.emptyList());
-
-        // Act
-        List<Training> result = trainingService.getTrainingsByTrainee(99L);
-
-        // Assert
-        assertTrue(result.isEmpty());
-        verify(trainingDAO).findByTraineeId(99L);
-    }
-
-    // ========== getTrainingsByTrainer Tests ==========
-
-    @Test
-    @DisplayName("Should return trainings for given trainer ID")
-    void testGetTrainingsByTrainer_WithData() {
-        // Arrange
-        Training training2 = new Training();
-        training2.setId(2L);
-        training2.setTraineeId(11L);
-        training2.setTrainerId(20L);
-        training2.setTrainingName("Another Session");
-
-        List<Training> trainings = Arrays.asList(testTraining, training2);
+    @DisplayName("getTrainingsByTrainer: delegates to DAO")
+    void getTrainingsByTrainer_delegates() {
+        List<Training> trainings = List.of(new Training());
         when(trainingDAO.findByTrainerId(20L)).thenReturn(trainings);
 
-        // Act
         List<Training> result = trainingService.getTrainingsByTrainer(20L);
 
-        // Assert
-        assertEquals(2, result.size());
-        assertTrue(result.stream().allMatch(t -> t.getTrainerId().equals(20L)));
+        assertEquals(trainings, result);
         verify(trainingDAO).findByTrainerId(20L);
-    }
-
-    @Test
-    @DisplayName("Should return empty list when trainer has no trainings")
-    void testGetTrainingsByTrainer_EmptyList() {
-        // Arrange
-        when(trainingDAO.findByTrainerId(99L)).thenReturn(Collections.emptyList());
-
-        // Act
-        List<Training> result = trainingService.getTrainingsByTrainer(99L);
-
-        // Assert
-        assertTrue(result.isEmpty());
-        verify(trainingDAO).findByTrainerId(99L);
     }
 }

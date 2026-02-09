@@ -5,47 +5,48 @@ import com.gymcrm.model.Training;
 import java.util.List;
 import java.util.Optional;
 
-/**
- * Service interface for managing Training entities.
- */
+
 public interface TrainingService {
-    
-    /**
-     * Create a new training.
-     * 
-     * @param training the training to create
-     * @return the created training with generated ID
-     */
+
     Training createTraining(Training training);
-    
-    /**
-     * Get a training by ID.
-     * 
-     * @param id the training ID
-     * @return Optional containing the training if found
-     */
+
     Optional<Training> getTraining(Long id);
-    
-    /**
-     * Get all trainings.
-     * 
-     * @return list of all trainings
-     */
+
     List<Training> getAllTrainings();
-    
-    /**
-     * Get trainings by trainee ID.
-     * 
-     * @param traineeId the trainee ID
-     * @return list of trainings for the trainee
-     */
+
     List<Training> getTrainingsByTrainee(Long traineeId);
-    
-    /**
-     * Get trainings by trainer ID.
-     * 
-     * @param trainerId the trainer ID
-     * @return list of trainings for the trainer
-     */
+
     List<Training> getTrainingsByTrainer(Long trainerId);
+
+    /**
+     * Get trainee trainings list by username and criteria.
+     *
+     * @param traineeUsername the trainee username
+     * @param fromDate        filter start date (optional)
+     * @param toDate          filter end date (optional)
+     * @param trainerName     filter by trainer name (optional)
+     * @param trainingType    filter by training type name (optional)
+     * @return list of trainings matching criteria
+     */
+    List<Training> getTraineeTrainingsByCriteria(
+            String traineeUsername,
+            java.time.LocalDate fromDate,
+            java.time.LocalDate toDate,
+            String trainerName,
+            String trainingType);
+
+    /**
+     * Get trainer trainings list by username and criteria.
+     *
+     * @param trainerUsername the trainer username
+     * @param fromDate        filter start date (optional)
+     * @param toDate          filter end date (optional)
+     * @param traineeName     filter by trainee name (optional)
+     * @return list of trainings matching criteria
+     */
+    List<Training> getTrainerTrainingsByCriteria(
+            String trainerUsername,
+            java.time.LocalDate fromDate,
+            java.time.LocalDate toDate,
+            String traineeName);
 }

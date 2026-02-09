@@ -67,12 +67,22 @@ public class TrainerDAOImpl implements TrainerDAO {
                 .getResultStream()
                 .findFirst();
     }
-    /*
     @Override
     public List<Trainer> findUnassignedTrainersByTraineeUsername(String traineeUsername) {
-        // TODO: 
-        throw new UnsupportedOperationException("Not implemented yet - pending Hibernate migration");
-    }
+        if (traineeUsername == null) {
+            return List.of();
+        }
 
-     */
+        return entityManager
+                .createQuery(
+                        "select tr from Trainer tr " +
+                                "where tr not in (" +
+                                "select t from Trainee tn " +
+                                "join tn.trainers t " +
+                                "join tn.user u " +
+                                "where u.username = :traineeUsername)",
+                        Trainer.class)
+                .setParameter("traineeUsername", traineeUsername)
+                .getResultList();
+    }
 }

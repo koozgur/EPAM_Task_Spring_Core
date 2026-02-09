@@ -16,4 +16,6 @@ public interface TrainerDAO {
     List<Trainer> findAll();
 
     Optional<Trainer> findByUsername(String username);
+
+    List<Trainer> findUnassignedTrainersByTraineeUsername(String traineeUsername);
 }

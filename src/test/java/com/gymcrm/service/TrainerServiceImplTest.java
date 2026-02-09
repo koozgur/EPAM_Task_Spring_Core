@@ -1,6 +1,10 @@
 package com.gymcrm.service;
 
 import com.gymcrm.dao.TrainerDAO;
+import com.gymcrm.exception.AuthenticationException;
+import com.gymcrm.exception.NotFoundException;
+import com.gymcrm.exception.StateConflictException;
+import com.gymcrm.exception.ValidationException;
 import com.gymcrm.model.Trainer;
 import com.gymcrm.model.TrainingType;
 import com.gymcrm.model.User;
@@ -88,7 +92,7 @@ class TrainerServiceImplTest {
     @Test
     @DisplayName("createTrainer: null trainer rejected")
     void createTrainer_nullTrainer() {
-        assertThrows(IllegalArgumentException.class,
+        assertThrows(ValidationException.class,
                 () -> trainerService.createTrainer(null));
         verifyNoInteractions(trainerDAO);
     }
@@ -131,7 +135,7 @@ class TrainerServiceImplTest {
 
         when(trainerDAO.findByUsername("nonexistent")).thenReturn(Optional.empty());
 
-        assertThrows(IllegalArgumentException.class,
+        assertThrows(NotFoundException.class,
                 () -> trainerService.updateTrainer(incoming));
         verify(trainerDAO, never()).update(any());
     }
@@ -169,7 +173,7 @@ class TrainerServiceImplTest {
     void changePassword_oldPasswordMismatch() {
         when(trainerDAO.findByUsername("Mike.Coach")).thenReturn(Optional.of(testTrainer));
 
-        assertThrows(IllegalArgumentException.class,
+        assertThrows(AuthenticationException.class,
                 () -> trainerService.changePassword("Mike.Coach", "wrongOld", "newPass"));
         verify(trainerDAO, never()).update(any());
     }
@@ -193,7 +197,7 @@ class TrainerServiceImplTest {
         testUser.setIsActive(true);
         when(trainerDAO.findByUsername("Mike.Coach")).thenReturn(Optional.of(testTrainer));
 
-        assertThrows(IllegalStateException.class,
+        assertThrows(StateConflictException.class,
                 () -> trainerService.activateTrainer("Mike.Coach"));
         verify(trainerDAO, never()).update(any());
     }
@@ -217,7 +221,7 @@ class TrainerServiceImplTest {
         testUser.setIsActive(false);
         when(trainerDAO.findByUsername("Mike.Coach")).thenReturn(Optional.of(testTrainer));
 
-        assertThrows(IllegalStateException.class,
+        assertThrows(StateConflictException.class,
                 () -> trainerService.deactivateTrainer("Mike.Coach"));
         verify(trainerDAO, never()).update(any());
     }
@@ -237,7 +241,7 @@ class TrainerServiceImplTest {
     @Test
     @DisplayName("getUnassignedTrainersByTraineeUsername: null username rejected")
     void getUnassignedTrainersByTraineeUsername_nullUsername() {
-        assertThrows(IllegalArgumentException.class,
+        assertThrows(ValidationException.class,
                 () -> trainerService.getUnassignedTrainersByTraineeUsername(null));
         verify(trainerDAO, never()).findUnassignedTrainersByTraineeUsername(any());
     }

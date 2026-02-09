@@ -2,6 +2,10 @@ package com.gymcrm.service;
 
 import com.gymcrm.dao.TraineeDAO;
 import com.gymcrm.dao.TrainerDAO;
+import com.gymcrm.exception.AuthenticationException;
+import com.gymcrm.exception.NotFoundException;
+import com.gymcrm.exception.StateConflictException;
+import com.gymcrm.exception.ValidationException;
 import com.gymcrm.model.Trainee;
 import com.gymcrm.model.Trainer;
 import com.gymcrm.model.User;
@@ -92,7 +96,7 @@ class TraineeServiceImplTest {
     @Test
     @DisplayName("createTrainee: null trainee rejected")
     void createTrainee_nullTrainee() {
-        assertThrows(IllegalArgumentException.class,
+        assertThrows(ValidationException.class,
                 () -> traineeService.createTrainee(null));
         verifyNoInteractions(traineeDAO);
     }
@@ -106,7 +110,7 @@ class TraineeServiceImplTest {
         Trainee trainee = new Trainee();
         trainee.setUser(user);
 
-        assertThrows(IllegalArgumentException.class,
+        assertThrows(ValidationException.class,
                 () -> traineeService.createTrainee(trainee));
         verifyNoInteractions(traineeDAO);
     }
@@ -149,7 +153,7 @@ class TraineeServiceImplTest {
 
         when(traineeDAO.findByUsername("nonexistent")).thenReturn(Optional.empty());
 
-        assertThrows(IllegalArgumentException.class,
+        assertThrows(NotFoundException.class,
                 () -> traineeService.updateTrainee(incoming));
         verify(traineeDAO, never()).update(any());
     }
@@ -169,7 +173,7 @@ class TraineeServiceImplTest {
     @Test
     @DisplayName("deleteTraineeByUsername: null username rejected")
     void deleteTraineeByUsername_nullUsername() {
-        assertThrows(IllegalArgumentException.class,
+        assertThrows(ValidationException.class,
                 () -> traineeService.deleteTraineeByUsername(null));
         verify(traineeDAO, never()).delete(anyLong());
     }
@@ -218,7 +222,7 @@ class TraineeServiceImplTest {
     void changePassword_oldPasswordMismatch() {
         when(traineeDAO.findByUsername("John.Doe")).thenReturn(Optional.of(testTrainee));
 
-        assertThrows(IllegalArgumentException.class,
+        assertThrows(AuthenticationException.class,
                 () -> traineeService.changePassword("John.Doe", "wrongOld", "newPass"));
         verify(traineeDAO, never()).update(any());
     }
@@ -242,7 +246,7 @@ class TraineeServiceImplTest {
         testUser.setIsActive(true);
         when(traineeDAO.findByUsername("John.Doe")).thenReturn(Optional.of(testTrainee));
 
-        assertThrows(IllegalStateException.class,
+        assertThrows(StateConflictException.class,
                 () -> traineeService.activateTrainee("John.Doe"));
         verify(traineeDAO, never()).update(any());
     }
@@ -266,7 +270,7 @@ class TraineeServiceImplTest {
         testUser.setIsActive(false);
         when(traineeDAO.findByUsername("John.Doe")).thenReturn(Optional.of(testTrainee));
 
-        assertThrows(IllegalStateException.class,
+        assertThrows(StateConflictException.class,
                 () -> traineeService.deactivateTrainee("John.Doe"));
         verify(traineeDAO, never()).update(any());
     }
@@ -311,7 +315,7 @@ class TraineeServiceImplTest {
         when(traineeDAO.findByUsername("John.Doe")).thenReturn(Optional.of(testTrainee));
         when(trainerDAO.findByUsername("missing.trainer")).thenReturn(Optional.empty());
 
-        assertThrows(IllegalArgumentException.class,
+        assertThrows(NotFoundException.class,
                 () -> traineeService.updateTraineeTrainersList(
                         "John.Doe", List.of("missing.trainer")));
         verify(traineeDAO, never()).update(any());

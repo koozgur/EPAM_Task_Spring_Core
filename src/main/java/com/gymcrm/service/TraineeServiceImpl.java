@@ -2,6 +2,10 @@ package com.gymcrm.service;
 
 import com.gymcrm.dao.TraineeDAO;
 import com.gymcrm.dao.TrainerDAO;
+import com.gymcrm.exception.AuthenticationException;
+import com.gymcrm.exception.NotFoundException;
+import com.gymcrm.exception.StateConflictException;
+import com.gymcrm.exception.ValidationException;
 import com.gymcrm.model.Trainee;
 import com.gymcrm.model.Trainer;
 import com.gymcrm.model.User;
@@ -64,8 +68,8 @@ public class TraineeServiceImpl implements TraineeService {
 
         String username = trainee.getUser().getUsername();
         Trainee existing = traineeDAO.findByUsername(username)
-                .orElseThrow(() -> new IllegalArgumentException(
-                        "Trainee not found with username: " + username));
+            .orElseThrow(() -> new NotFoundException(
+                "Trainee not found with username: " + username));
 
         User existingUser = existing.getUser();
         existingUser.setFirstName(trainee.getUser().getFirstName());
@@ -83,12 +87,12 @@ public class TraineeServiceImpl implements TraineeService {
     @Transactional
     public void deleteTraineeByUsername(String username) {
         if (username == null) {
-            throw new IllegalArgumentException("Username must not be null");
+            throw new ValidationException("Username must not be null");
         }
 
         Trainee trainee = traineeDAO.findByUsername(username)
-                .orElseThrow(() -> new IllegalArgumentException(
-                        "Trainee not found with username: " + username));
+            .orElseThrow(() -> new NotFoundException(
+                "Trainee not found with username: " + username));
 
         traineeDAO.delete(trainee.getId());
         logger.info("Deleted trainee profile for username: {}", username);
@@ -131,7 +135,7 @@ public class TraineeServiceImpl implements TraineeService {
     @Transactional(readOnly = true)
     public Optional<Trainee> getTraineeByUsername(String username) {
         if (username == null) {
-            throw new IllegalArgumentException("Username must not be null");
+            throw new ValidationException("Username must not be null");
         }
         Optional<Trainee> result = traineeDAO.findByUsername(username);
         logger.info("Selected trainee by username: {}, found: {}", username, result.isPresent());
@@ -142,16 +146,16 @@ public class TraineeServiceImpl implements TraineeService {
     @Transactional
     public void changePassword(String username, String oldPassword, String newPassword) {
         if (username == null || oldPassword == null || newPassword == null) {
-            throw new IllegalArgumentException(
-                    "Username, old password, and new password must not be null");
+            throw new ValidationException(
+                "Username, old password, and new password must not be null");
         }
 
         Trainee trainee = traineeDAO.findByUsername(username)
-                .orElseThrow(() -> new IllegalArgumentException(
-                        "Trainee not found with username: " + username));
+            .orElseThrow(() -> new NotFoundException(
+                "Trainee not found with username: " + username));
 
         if (!oldPassword.equals(trainee.getUser().getPassword())) {
-            throw new IllegalArgumentException("Old password does not match");
+            throw new AuthenticationException("Old password does not match");
         }
 
         trainee.getUser().setPassword(newPassword);
@@ -163,15 +167,15 @@ public class TraineeServiceImpl implements TraineeService {
     @Transactional
     public void activateTrainee(String username) {
         if (username == null) {
-            throw new IllegalArgumentException("Username must not be null");
+            throw new ValidationException("Username must not be null");
         }
 
         Trainee trainee = traineeDAO.findByUsername(username)
-                .orElseThrow(() -> new IllegalArgumentException(
+                .orElseThrow(() -> new NotFoundException(
                         "Trainee not found with username: " + username));
 
         if (trainee.getUser().getIsActive()) {
-            throw new IllegalStateException("Trainee is already active: " + username);
+            throw new StateConflictException("Trainee is already active: " + username);
         }
 
         trainee.getUser().setIsActive(true);
@@ -183,15 +187,15 @@ public class TraineeServiceImpl implements TraineeService {
     @Transactional
     public void deactivateTrainee(String username) {
         if (username == null) {
-            throw new IllegalArgumentException("Username must not be null");
+            throw new ValidationException("Username must not be null");
         }
 
         Trainee trainee = traineeDAO.findByUsername(username)
-                .orElseThrow(() -> new IllegalArgumentException(
+                .orElseThrow(() -> new NotFoundException(
                         "Trainee not found with username: " + username));
 
         if (!trainee.getUser().getIsActive()) {
-            throw new IllegalStateException("Trainee is already inactive: " + username);
+            throw new StateConflictException("Trainee is already inactive: " + username);
         }
 
         trainee.getUser().setIsActive(false);
@@ -203,21 +207,21 @@ public class TraineeServiceImpl implements TraineeService {
     @Transactional
     public List<Trainer> updateTraineeTrainersList(String traineeUsername, List<String> trainerUsernames) {
         if (traineeUsername == null) {
-            throw new IllegalArgumentException("Trainee username must not be null");
+            throw new ValidationException("Trainee username must not be null");
         }
         if (trainerUsernames == null) {
-            throw new IllegalArgumentException("Trainer usernames list must not be null");
+            throw new ValidationException("Trainer usernames list must not be null");
         }
 
         Trainee trainee = traineeDAO.findByUsername(traineeUsername)
-                .orElseThrow(() -> new IllegalArgumentException(
+                .orElseThrow(() -> new NotFoundException(
                         "Trainee not found with username: " + traineeUsername));
 
         List<Trainer> newTrainers = new ArrayList<>();
         for (String trainerUsername : trainerUsernames) {
-            Trainer trainer = trainerDAO.findByUsername(trainerUsername)
-                    .orElseThrow(() -> new IllegalArgumentException(
-                            "Trainer not found with username: " + trainerUsername));
+                Trainer trainer = trainerDAO.findByUsername(trainerUsername)
+                    .orElseThrow(() -> new NotFoundException(
+                        "Trainer not found with username: " + trainerUsername));
             newTrainers.add(trainer);
         }
 
@@ -235,17 +239,17 @@ public class TraineeServiceImpl implements TraineeService {
      */
     private void validateRequiredFields(Trainee trainee) {
         if (trainee == null) {
-            throw new IllegalArgumentException("Trainee must not be null");
+            throw new ValidationException("Trainee must not be null");
         }
         if (trainee.getUser() == null) {
-            throw new IllegalArgumentException("Trainee must have a User");
+            throw new ValidationException("Trainee must have a User");
         }
         User user = trainee.getUser();
         if (user.getFirstName() == null || user.getFirstName().isBlank()) {
-            throw new IllegalArgumentException("First name is required");
+            throw new ValidationException("First name is required");
         }
         if (user.getLastName() == null || user.getLastName().isBlank()) {
-            throw new IllegalArgumentException("Last name is required");
+            throw new ValidationException("Last name is required");
         }
     }
 }

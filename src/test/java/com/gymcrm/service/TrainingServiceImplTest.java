@@ -4,6 +4,8 @@ import com.gymcrm.dao.TraineeDAO;
 import com.gymcrm.dao.TrainerDAO;
 import com.gymcrm.dao.TrainingDAO;
 import com.gymcrm.dao.TrainingTypeDAO;
+import com.gymcrm.exception.NotFoundException;
+import com.gymcrm.exception.ValidationException;
 import com.gymcrm.model.Trainee;
 import com.gymcrm.model.Trainer;
 import com.gymcrm.model.Training;
@@ -117,7 +119,7 @@ class TrainingServiceImplTest {
 
         when(traineeDAO.findByUsername("trainee.user")).thenReturn(Optional.empty());
 
-        assertThrows(IllegalArgumentException.class,
+        assertThrows(NotFoundException.class,
                 () -> trainingService.createTraining(training));
         verify(trainerDAO, never()).findByUsername(any());
         verify(trainingDAO, never()).create(any());
@@ -137,7 +139,7 @@ class TrainingServiceImplTest {
         when(traineeDAO.findByUsername("trainee.user")).thenReturn(Optional.of(testTrainee));
         when(trainerDAO.findByUsername("trainer.user")).thenReturn(Optional.empty());
 
-        assertThrows(IllegalArgumentException.class,
+        assertThrows(NotFoundException.class,
                 () -> trainingService.createTraining(training));
         verify(trainingDAO, never()).create(any());
     }
@@ -159,7 +161,7 @@ class TrainingServiceImplTest {
         when(trainerDAO.findByUsername("trainer.user")).thenReturn(Optional.of(testTrainer));
         when(trainingTypeDAO.findById(5L)).thenReturn(Optional.empty());
 
-        assertThrows(IllegalArgumentException.class,
+        assertThrows(NotFoundException.class,
                 () -> trainingService.createTraining(training));
         verify(trainingDAO, never()).create(any());
     }
@@ -175,7 +177,7 @@ class TrainingServiceImplTest {
         training.setTrainingDate(LocalDate.of(2025, 1, 10));
         training.setTrainingDuration(60);
 
-        assertThrows(IllegalArgumentException.class,
+        assertThrows(ValidationException.class,
                 () -> trainingService.createTraining(training));
         verifyNoInteractions(trainingDAO);
     }
@@ -183,7 +185,7 @@ class TrainingServiceImplTest {
     @Test
     @DisplayName("getTraineeTrainingsByCriteria: null username rejected")
     void getTraineeTrainingsByCriteria_nullUsername() {
-        assertThrows(IllegalArgumentException.class,
+        assertThrows(ValidationException.class,
                 () -> trainingService.getTraineeTrainingsByCriteria(
                         null, LocalDate.now(), LocalDate.now(), null, null));
     }

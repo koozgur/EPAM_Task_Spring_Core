@@ -4,6 +4,8 @@ import com.gymcrm.dao.TraineeDAO;
 import com.gymcrm.dao.TrainerDAO;
 import com.gymcrm.dao.TrainingDAO;
 import com.gymcrm.dao.TrainingTypeDAO;
+import com.gymcrm.exception.NotFoundException;
+import com.gymcrm.exception.ValidationException;
 import com.gymcrm.model.Trainee;
 import com.gymcrm.model.Trainer;
 import com.gymcrm.model.Training;
@@ -57,11 +59,11 @@ public class TrainingServiceImpl implements TrainingService {
         String trainerUsername = training.getTrainer().getUser().getUsername();
 
         Trainee trainee = traineeDAO.findByUsername(traineeUsername)
-            .orElseThrow(() -> new IllegalArgumentException(
+            .orElseThrow(() -> new NotFoundException(
                 "Trainee not found with username: " + traineeUsername));
 
         Trainer trainer = trainerDAO.findByUsername(trainerUsername)
-            .orElseThrow(() -> new IllegalArgumentException(
+            .orElseThrow(() -> new NotFoundException(
                 "Trainer not found with username: " + trainerUsername));
 
         TrainingType trainingType = resolveTrainingType(training.getTrainingType());
@@ -110,7 +112,7 @@ public class TrainingServiceImpl implements TrainingService {
             String trainingType) {
 
         if (traineeUsername == null) {
-            throw new IllegalArgumentException("Trainee username must not be null");
+            throw new ValidationException("Trainee username must not be null");
         }
 
         return trainingDAO.findByTraineeUsernameAndCriteria(
@@ -130,7 +132,7 @@ public class TrainingServiceImpl implements TrainingService {
             String traineeName) {
 
         if (trainerUsername == null) {
-            throw new IllegalArgumentException("Trainer username must not be null");
+            throw new ValidationException("Trainer username must not be null");
         }
 
         return trainingDAO.findByTrainerUsernameAndCriteria(
@@ -144,50 +146,50 @@ public class TrainingServiceImpl implements TrainingService {
 
     private void validateRequiredFields(Training training) {
         if (training == null) {
-            throw new IllegalArgumentException("Training must not be null");
+            throw new ValidationException("Training must not be null");
         }
         if (training.getTrainee() == null
                 || training.getTrainee().getUser() == null
                 || training.getTrainee().getUser().getUsername() == null) {
-            throw new IllegalArgumentException("Trainee username is required");
+            throw new ValidationException("Trainee username is required");
         }
         if (training.getTrainer() == null
                 || training.getTrainer().getUser() == null
                 || training.getTrainer().getUser().getUsername() == null) {
-            throw new IllegalArgumentException("Trainer username is required");
+            throw new ValidationException("Trainer username is required");
         }
         if (training.getTrainingType() == null) {
-            throw new IllegalArgumentException("Training type is required");
+            throw new ValidationException("Training type is required");
         }
         if (training.getTrainingName() == null || training.getTrainingName().isBlank()) {
-            throw new IllegalArgumentException("Training name is required");
+            throw new ValidationException("Training name is required");
         }
         if (training.getTrainingDate() == null) {
-            throw new IllegalArgumentException("Training date is required");
+            throw new ValidationException("Training date is required");
         }
         if (training.getTrainingDuration() == null) {
-            throw new IllegalArgumentException("Training duration is required");
+            throw new ValidationException("Training duration is required");
         }
     }
 
     private TrainingType resolveTrainingType(TrainingType input) {
         if (input == null) {
-            throw new IllegalArgumentException("Training type is required");
+            throw new ValidationException("Training type is required");
         }
 
         if (input.getId() != null) {
             return trainingTypeDAO.findById(input.getId())
-                    .orElseThrow(() -> new IllegalArgumentException(
+                    .orElseThrow(() -> new NotFoundException(
                             "Training type not found with id: " + input.getId()));
         }
 
         String name = input.getTrainingTypeName();
         if (name == null || name.isBlank()) {
-            throw new IllegalArgumentException("Training type name is required");
+            throw new ValidationException("Training type name is required");
         }
 
         return trainingTypeDAO.findByName(name)
-                .orElseThrow(() -> new IllegalArgumentException(
+                .orElseThrow(() -> new NotFoundException(
                         "Training type not found with name: " + name));
     }
 

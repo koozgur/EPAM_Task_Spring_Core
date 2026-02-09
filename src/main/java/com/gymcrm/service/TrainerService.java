@@ -5,40 +5,33 @@ import com.gymcrm.model.Trainer;
 import java.util.List;
 import java.util.Optional;
 
-/**
- * Service interface for managing Trainer entities.
- */
 public interface TrainerService {
-    
-    /**
-     * Create a new trainer profile.
-     * Generates username and password for the trainer.
-     * 
-     * @param trainer the trainer to create
-     * @return the created trainer with generated ID, username, and password
-     */
+
     Trainer createTrainer(Trainer trainer);
-    
+
     /**
-     * Update an existing trainer profile.
-     * 
-     * @param trainer the trainer to update
-     * @return the updated trainer
+     * Authenticate a trainer by username and password matching.
+     * Must be called before any trainer operation except profile creation.
+     *
+     * @param username the trainer username
+     * @param password the trainer password
+     * @return true if credentials match, false otherwise
      */
+    boolean authenticate(String username, String password);
+
+    Optional<Trainer> getTrainerByUsername(String username);
+
     Trainer updateTrainer(Trainer trainer);
-    
-    /**
-     * Get a trainer profile by ID.
-     * 
-     * @param id the trainer ID
-     * @return Optional containing the trainer if found
-     */
+
+    void changePassword(String username, String oldPassword, String newPassword);
+
+    void activateTrainer(String username);
+
+    void deactivateTrainer(String username);
+
+    List<Trainer> getUnassignedTrainersByTraineeUsername(String traineeUsername);
+
     Optional<Trainer> getTrainer(Long id);
-    
-    /**
-     * Get all trainer profiles.
-     * 
-     * @return list of all trainers
-     */
+
     List<Trainer> getAllTrainers();
 }

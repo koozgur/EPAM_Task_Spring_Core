@@ -3,12 +3,20 @@ package com.gymcrm.service;
 import com.gymcrm.dao.TraineeDAO;
 import com.gymcrm.dao.TrainerDAO;
 import com.gymcrm.dao.TrainingDAO;
+import com.gymcrm.dao.TrainingTypeDAO;
+import com.gymcrm.exception.NotFoundException;
+import com.gymcrm.exception.ValidationException;
+import com.gymcrm.model.Trainee;
+import com.gymcrm.model.Trainer;
 import com.gymcrm.model.Training;
+import com.gymcrm.model.TrainingType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
@@ -20,6 +28,7 @@ public class TrainingServiceImpl implements TrainingService {
     private TrainingDAO trainingDAO;
     private TraineeDAO traineeDAO;
     private TrainerDAO trainerDAO;
+    private TrainingTypeDAO trainingTypeDAO;
 
     @Autowired
     public void setTrainingDAO(TrainingDAO trainingDAO) {
@@ -36,94 +45,152 @@ public class TrainingServiceImpl implements TrainingService {
         this.trainerDAO = trainerDAO;
     }
 
+    @Autowired
+    public void setTrainingTypeDAO(TrainingTypeDAO trainingTypeDAO) {
+        this.trainingTypeDAO = trainingTypeDAO;
+    }
+
     @Override
+        @Transactional
     public Training createTraining(Training training) {
+        validateRequiredFields(training);
+
+        String traineeUsername = training.getTrainee().getUser().getUsername();
+        String trainerUsername = training.getTrainer().getUser().getUsername();
+
+        Trainee trainee = traineeDAO.findByUsername(traineeUsername)
+            .orElseThrow(() -> new NotFoundException(
+                "Trainee not found with username: " + traineeUsername));
+
+        Trainer trainer = trainerDAO.findByUsername(trainerUsername)
+            .orElseThrow(() -> new NotFoundException(
+                "Trainer not found with username: " + trainerUsername));
+
+        TrainingType trainingType = resolveTrainingType(training.getTrainingType());
+
+        training.setTrainee(trainee);
+        training.setTrainer(trainer);
+        training.setTrainingType(trainingType);
+
+        Training created = trainingDAO.create(training);
+        logger.info("Created training for trainee: {}, trainer: {}",
+            traineeUsername, trainerUsername);
+        return created;
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Optional<Training> getTraining(Long id) {
+        return trainingDAO.findById(id);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<Training> getAllTrainings() {
+        return trainingDAO.findAll();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<Training> getTrainingsByTrainee(Long traineeId) {
+        return trainingDAO.findByTraineeId(traineeId);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<Training> getTrainingsByTrainer(Long trainerId) {
+        return trainingDAO.findByTrainerId(trainerId);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<Training> getTraineeTrainingsByCriteria(
+            String traineeUsername,
+            LocalDate fromDate,
+            LocalDate toDate,
+            String trainerName,
+            String trainingType) {
+
+        if (traineeUsername == null) {
+            throw new ValidationException("Trainee username must not be null");
+        }
+
+        return trainingDAO.findByTraineeUsernameAndCriteria(
+                traineeUsername,
+                fromDate,
+                toDate,
+                trainerName,
+                trainingType);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<Training> getTrainerTrainingsByCriteria(
+            String trainerUsername,
+            LocalDate fromDate,
+            LocalDate toDate,
+            String traineeName) {
+
+        if (trainerUsername == null) {
+            throw new ValidationException("Trainer username must not be null");
+        }
+
+        return trainingDAO.findByTrainerUsernameAndCriteria(
+                trainerUsername,
+                fromDate,
+                toDate,
+                traineeName);
+    }
+
+    // ────────── Private helpers ──────────
+
+    private void validateRequiredFields(Training training) {
         if (training == null) {
-            logger.warn("Rejected training creation for null training");
-            throw new IllegalArgumentException("Training cannot be null");
+            throw new ValidationException("Training must not be null");
         }
-        if (training.getTraineeId() == null) {
-            logger.warn("Rejected training creation for null trainee ID");
-            throw new IllegalArgumentException("Trainee ID cannot be null");
+        if (training.getTrainee() == null
+                || training.getTrainee().getUser() == null
+                || training.getTrainee().getUser().getUsername() == null) {
+            throw new ValidationException("Trainee username is required");
         }
-        if (training.getTrainerId() == null) {
-            logger.warn("Rejected training creation for null trainer ID");
-            throw new IllegalArgumentException("Trainer ID cannot be null");
+        if (training.getTrainer() == null
+                || training.getTrainer().getUser() == null
+                || training.getTrainer().getUser().getUsername() == null) {
+            throw new ValidationException("Trainer username is required");
         }
-        if (training.getTrainingName() == null || training.getTrainingName().trim().isEmpty()) {
-            logger.warn("Rejected training creation for null/empty training name");
-            throw new IllegalArgumentException("Training name cannot be null or empty");
+        if (training.getTrainingType() == null) {
+            throw new ValidationException("Training type is required");
+        }
+        if (training.getTrainingName() == null || training.getTrainingName().isBlank()) {
+            throw new ValidationException("Training name is required");
         }
         if (training.getTrainingDate() == null) {
-            logger.warn("Rejected training creation for null training date");
-            throw new IllegalArgumentException("Training date cannot be null");
+            throw new ValidationException("Training date is required");
         }
-        if (training.getTrainingDuration() == null || training.getTrainingDuration() <= 0) {
-            logger.warn("Rejected training creation for invalid training duration");
-            throw new IllegalArgumentException("Training duration must be a positive number");
+        if (training.getTrainingDuration() == null) {
+            throw new ValidationException("Training duration is required");
         }
-        
-        // Validate that trainee and trainer exist
-        if (traineeDAO.findById(training.getTraineeId()).isEmpty()) {
-            logger.warn("Rejected training creation - trainee not found id={}", training.getTraineeId());
-            throw new IllegalArgumentException("Trainee not found with ID: " + training.getTraineeId());
-        }
-        
-        if (trainerDAO.findById(training.getTrainerId()).isEmpty()) {
-            logger.warn("Rejected training creation - trainer not found id={}", training.getTrainerId());
-            throw new IllegalArgumentException("Trainer not found with ID: " + training.getTrainerId());
-        }
-        
-        Training createdTraining = trainingDAO.create(training);
-        logger.info("Training created id={} name={}", createdTraining.getId(), createdTraining.getTrainingName());
-        
-        return createdTraining;
     }
 
-    @Override
-    public Optional<Training> getTraining(Long id) {
-        if (id == null) {
-            logger.warn("Rejected training retrieval for null training ID");
-            throw new IllegalArgumentException("Training ID cannot be null");
+    private TrainingType resolveTrainingType(TrainingType input) {
+        if (input == null) {
+            throw new ValidationException("Training type is required");
         }
-        
-        Optional<Training> training = trainingDAO.findById(id);
-        if (training.isPresent()) {
-            logger.debug("Training found id={}", id);
-        } else {
-            logger.debug("Training not found id={}", id);
+
+        if (input.getId() != null) {
+            return trainingTypeDAO.findById(input.getId())
+                    .orElseThrow(() -> new NotFoundException(
+                            "Training type not found with id: " + input.getId()));
         }
-        return training;
+
+        String name = input.getTrainingTypeName();
+        if (name == null || name.isBlank()) {
+            throw new ValidationException("Training type name is required");
+        }
+
+        return trainingTypeDAO.findByName(name)
+                .orElseThrow(() -> new NotFoundException(
+                        "Training type not found with name: " + name));
     }
 
-    @Override
-    public List<Training> getAllTrainings() {
-        List<Training> trainings = trainingDAO.findAll();
-        logger.debug("Found {} trainings", trainings.size());
-        return trainings;
-    }
-
-    @Override
-    public List<Training> getTrainingsByTrainee(Long traineeId) {
-        if (traineeId == null) {
-            logger.warn("Rejected trainings retrieval for null trainee ID");
-            throw new IllegalArgumentException("Trainee ID cannot be null");
-        }
-        
-        List<Training> trainings = trainingDAO.findByTraineeId(traineeId);
-        logger.debug("Found {} trainings for trainee id={}", trainings.size(), traineeId);
-        return trainings;
-    }
-
-    @Override
-    public List<Training> getTrainingsByTrainer(Long trainerId) {
-        if (trainerId == null) {
-            logger.warn("Rejected trainings retrieval for null trainer ID");
-            throw new IllegalArgumentException("Trainer ID cannot be null");
-        }
-        
-        List<Training> trainings = trainingDAO.findByTrainerId(trainerId);
-        logger.debug("Found {} trainings for trainer id={}", trainings.size(), trainerId);
-        return trainings;
-    }
 }

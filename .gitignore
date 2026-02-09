@@ -9,3 +9,5 @@ logs/
 *.log.*
 
 target/
+
+IMPLEMENTATION_PLAN.md

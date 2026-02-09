@@ -1,12 +1,18 @@
 package com.gymcrm.service;
 
 import com.gymcrm.dao.TrainerDAO;
+import com.gymcrm.exception.AuthenticationException;
+import com.gymcrm.exception.NotFoundException;
+import com.gymcrm.exception.StateConflictException;
+import com.gymcrm.exception.ValidationException;
 import com.gymcrm.model.Trainer;
+import com.gymcrm.model.User;
 import com.gymcrm.util.CredentialsGenerator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
@@ -30,76 +36,175 @@ public class TrainerServiceImpl implements TrainerService {
     }
 
     @Override
+    @Transactional
     public Trainer createTrainer(Trainer trainer) {
-        if (trainer == null) {
-            logger.warn("Rejected trainer creation for null trainer");
-            throw new IllegalArgumentException("Trainer cannot be null");
-        }
-        if (trainer.getFirstName() == null || trainer.getFirstName().trim().isEmpty()) {
-            logger.warn("Rejected trainer creation for null/empty first name");
-            throw new IllegalArgumentException("Trainer first name cannot be null or empty");
-        }
-        if (trainer.getLastName() == null || trainer.getLastName().trim().isEmpty()) {
-            logger.warn("Rejected trainer creation for null/empty last name");
-            throw new IllegalArgumentException("Trainer last name cannot be null or empty");
-        }
+        validateRequiredFields(trainer);
 
-        // Service owns the business logic of creation, DAO just stores the object
-        String username = credentialsGenerator.generateUsername(trainer.getFirstName(), trainer.getLastName());
+        User user = trainer.getUser();
+        String username = credentialsGenerator.generateUsername(user.getFirstName(), user.getLastName());
         String password = credentialsGenerator.generatePassword();
-        
-        trainer.setUsername(username);
-        trainer.setPassword(password);
-        
-        Trainer createdTrainer = trainerDAO.create(trainer);
-        logger.info("Trainer created id={} username={}", createdTrainer.getUserId(), createdTrainer.getUsername());
-        
-        return createdTrainer;
+        user.setUsername(username);
+        user.setPassword(password);
+        user.setIsActive(true);
+
+        Trainer created = trainerDAO.create(trainer);
+        logger.info("Created trainer profile with username: {}", username);
+        return created;
     }
 
     @Override
+    @Transactional(readOnly = true)
+    public boolean authenticate(String username, String password) {
+        if (username == null || password == null) {
+            logger.warn("Authentication attempt with null credentials");
+            return false;
+        }
+
+        Optional<Trainer> trainerOpt = trainerDAO.findByUsername(username);
+        if (trainerOpt.isEmpty()) {
+            logger.warn("Authentication failed: trainer not found for username: {}", username);
+            return false;
+        }
+
+        boolean matches = password.equals(trainerOpt.get().getUser().getPassword());
+        if (!matches) {
+            logger.warn("Authentication failed: password mismatch for username: {}", username);
+        }
+        return matches;
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Optional<Trainer> getTrainerByUsername(String username) {
+        if (username == null) {
+            throw new ValidationException("Username must not be null");
+        }
+        Optional<Trainer> result = trainerDAO.findByUsername(username);
+        logger.info("Selected trainer by username: {}, found: {}", username, result.isPresent());
+        return result;
+    }
+
+    @Override
+    @Transactional
     public Trainer updateTrainer(Trainer trainer) {
-        if (trainer == null) {
-            logger.warn("Rejected trainer update for null trainer");
-            throw new IllegalArgumentException("Trainer cannot be null");
-        }
-        if (trainer.getUserId() == null) {
-            logger.warn("Rejected trainer update for null trainer ID");
-            throw new IllegalArgumentException("Trainer ID cannot be null for update");
-        }
+        validateRequiredFields(trainer);
 
-        try {
-            Trainer updated = trainerDAO.update(trainer);
-            logger.info("Trainer updated id={}", updated.getUserId());
-            return updated;
+        String username = trainer.getUser().getUsername();
+        Trainer existing = trainerDAO.findByUsername(username)
+            .orElseThrow(() -> new NotFoundException(
+                "Trainer not found with username: " + username));
 
-        } catch (IllegalArgumentException e) {
-            // Expected business failure (not found, invalid state)
-            logger.warn("Update failed: trainer id={} not found", trainer.getUserId());
-            throw e;
-        }
+        // Update allowed fields on the managed entity
+        User existingUser = existing.getUser();
+        existingUser.setFirstName(trainer.getUser().getFirstName());
+        existingUser.setLastName(trainer.getUser().getLastName());
+        existingUser.setIsActive(trainer.getUser().getIsActive());
+        existing.setSpecialization(trainer.getSpecialization());
+
+        Trainer updated = trainerDAO.update(existing);
+        logger.info("Updated trainer profile for username: {}", username);
+        return updated;
     }
 
     @Override
+    @Transactional
+    public void changePassword(String username, String oldPassword, String newPassword) {
+        if (username == null || oldPassword == null || newPassword == null) {
+            throw new ValidationException(
+                "Username, old password, and new password must not be null");
+        }
+
+        Trainer trainer = trainerDAO.findByUsername(username)
+            .orElseThrow(() -> new NotFoundException(
+                "Trainer not found with username: " + username));
+
+        if (!oldPassword.equals(trainer.getUser().getPassword())) {
+            throw new AuthenticationException("Old password does not match");
+        }
+
+        trainer.getUser().setPassword(newPassword);
+        trainerDAO.update(trainer);
+        logger.info("Password changed for trainer: {}", username);
+    }
+
+    @Override
+    @Transactional
+    public void activateTrainer(String username) {
+        if (username == null) {
+            throw new ValidationException("Username must not be null");
+        }
+
+        Trainer trainer = trainerDAO.findByUsername(username)
+                .orElseThrow(() -> new NotFoundException(
+                        "Trainer not found with username: " + username));
+
+        if (trainer.getUser().getIsActive()) {
+            throw new StateConflictException("Trainer is already active: " + username);
+        }
+
+        trainer.getUser().setIsActive(true);
+        trainerDAO.update(trainer);
+        logger.info("Activated trainer: {}", username);
+    }
+
+    @Override
+    @Transactional
+    public void deactivateTrainer(String username) {
+        if (username == null) {
+            throw new ValidationException("Username must not be null");
+        }
+
+        Trainer trainer = trainerDAO.findByUsername(username)
+                .orElseThrow(() -> new NotFoundException(
+                        "Trainer not found with username: " + username));
+
+        if (!(trainer.getUser().getIsActive())) {
+            throw new StateConflictException("Trainer is already inactive: " + username);
+        }
+
+        trainer.getUser().setIsActive(false);
+        trainerDAO.update(trainer);
+        logger.info("Deactivated trainer: {}", username);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
     public Optional<Trainer> getTrainer(Long id) {
-        if (id == null) {
-            logger.warn("Rejected trainer retrieval for null trainer ID");
-            throw new IllegalArgumentException("Trainer ID cannot be null");
-        }
-        
-        Optional<Trainer> trainer = trainerDAO.findById(id);
-        if (trainer.isPresent()) {
-            logger.debug("Trainer found id={}", id);
-        } else {
-            logger.debug("Trainer not found id={}", id);
-        }
-        return trainer;
+        return trainerDAO.findById(id);
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<Trainer> getAllTrainers() {
-        List<Trainer> trainers = trainerDAO.findAll();
-        logger.debug("Found {} trainers", trainers.size());
-        return trainers;
+        return trainerDAO.findAll();
     }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<Trainer> getUnassignedTrainersByTraineeUsername(String traineeUsername) {
+        if (traineeUsername == null) {
+            throw new ValidationException("Trainee username must not be null");
+        }
+        return trainerDAO.findUnassignedTrainersByTraineeUsername(traineeUsername);
+    }
+
+    /**
+     * Validates that the Trainer and its User carry all required fields.
+     */
+    private void validateRequiredFields(Trainer trainer) {
+        if (trainer == null) {
+            throw new ValidationException("Trainer must not be null");
+        }
+        if (trainer.getUser() == null) {
+            throw new ValidationException("Trainer must have a User");
+        }
+        User user = trainer.getUser();
+        if (user.getFirstName() == null || user.getFirstName().isBlank()) {
+            throw new ValidationException("First name is required");
+        }
+        if (user.getLastName() == null || user.getLastName().isBlank()) {
+            throw new ValidationException("Last name is required");
+        }
+    }
+
 }

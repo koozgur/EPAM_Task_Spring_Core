@@ -1,87 +1,88 @@
 package com.gymcrm.dao;
 
 import com.gymcrm.model.Trainer;
-import com.gymcrm.storage.StorageService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
 
-import javax.annotation.Resource;
-import java.util.ArrayList;
+import javax.persistence.EntityManager;
+import javax.persistence.PersistenceContext;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 
 /**
- * Implementation of TrainerDAO for managing Trainer entities.
- * Uses injected storage map bean for data persistence and StorageService for ID generation.
+ * JPA implementation of TrainerDAO for managing Trainer entities.
  */
 @Repository
 public class TrainerDAOImpl implements TrainerDAO {
-    
+    //DAO logs technical persistence facts, not business events.
     private static final Logger logger = LoggerFactory.getLogger(TrainerDAOImpl.class);
     
-    private Map<Long, Trainer> trainerStorage;
-    private StorageService storageService;
-    
-    /**
-     * Setter-based injection for trainer storage map using @Resource
-     * 
-     * @param trainerStorage the trainer storage map bean
-     */
-    @Resource
-    public void setTrainerStorage(Map<Long, Trainer> trainerStorage) {
-        this.trainerStorage = trainerStorage;
-    }
-    
-    /**
-     * Setter-based injection for StorageService (for ID generation)
-     * 
-     * @param storageService the storage service component
-     */
-    @Autowired
-    public void setStorageService(StorageService storageService) {
-        this.storageService = storageService;
-    }
+    @PersistenceContext
+    private EntityManager entityManager;
     
     @Override
     public Trainer create(Trainer trainer) {
-        //ID fields will be generated internally
-        trainer.setUserId(storageService.generateTrainerId());
+        entityManager.persist(trainer);
         
-        trainerStorage.put(trainer.getUserId(), trainer);
-        logger.debug("Persisted Trainer entity id={}", trainer.getUserId());
-        
+        logger.info("Persisted trainer with id: {} and username: {}",
+                trainer.getId(), trainer.getUser().getUsername());
         return trainer;
     }
     
     @Override
     public Trainer update(Trainer trainer) {
-        if (!trainerStorage.containsKey(trainer.getUserId())) {
-            throw new IllegalArgumentException("Trainer not found with ID: " + trainer.getUserId());
-        }
-        
-        trainerStorage.put(trainer.getUserId(), trainer);
-        logger.debug("Updated Trainer entity id={}", trainer.getUserId());
-        return trainer;
+        Trainer merged = entityManager.merge(trainer);
+
+        logger.info("Updated trainer with id: {} and username: {}",
+                merged.getId(), merged.getUser() != null ? merged.getUser().getUsername() : null);
+        return merged;
     }
     
     @Override
     public Optional<Trainer> findById(Long id) {
-        //Service defines what is a valid request, input control against business rules
-        return Optional.ofNullable(trainerStorage.get(id));
+        if (id == null) {
+            return Optional.empty();
+        }
+        return Optional.ofNullable(entityManager.find(Trainer.class, id));
     }
     
     @Override
     public List<Trainer> findAll() {
-        return new ArrayList<>(trainerStorage.values());
+        return entityManager
+                .createQuery("select t from Trainer t", Trainer.class)
+                .getResultList();
     }
     
     @Override
     public Optional<Trainer> findByUsername(String username) {
-        return trainerStorage.values().stream()
-                .filter(t -> username.equals(t.getUsername()))
+        if (username == null) {
+            return Optional.empty();
+        }
+        return entityManager
+                .createQuery(
+                        "select t from Trainer t join t.user u where u.username = :username",
+                        Trainer.class)
+                .setParameter("username", username)
+                .getResultStream()
                 .findFirst();
+    }
+    @Override
+    public List<Trainer> findUnassignedTrainersByTraineeUsername(String traineeUsername) {
+        if (traineeUsername == null) {
+            return List.of();
+        }
+
+        return entityManager
+                .createQuery(
+                        "select tr from Trainer tr " +
+                                "where tr not in (" +
+                                "select t from Trainee tn " +
+                                "join tn.trainers t " +
+                                "join tn.user u " +
+                                "where u.username = :traineeUsername)",
+                        Trainer.class)
+                .setParameter("traineeUsername", traineeUsername)
+                .getResultList();
     }
 }

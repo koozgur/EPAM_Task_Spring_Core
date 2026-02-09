@@ -1,50 +1,127 @@
 package com.gymcrm.config;
 
-import com.gymcrm.model.Trainee;
-import com.gymcrm.model.Trainer;
-import com.gymcrm.model.Training;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.DependsOn;
 import org.springframework.context.annotation.PropertySource;
+import org.springframework.core.io.ClassPathResource;
+import org.springframework.jdbc.datasource.init.DataSourceInitializer;
+import org.springframework.jdbc.datasource.init.ResourceDatabasePopulator;
+import org.springframework.jdbc.datasource.DriverManagerDataSource;
+import org.springframework.orm.jpa.JpaTransactionManager;
+import org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean;
+import org.springframework.orm.jpa.vendor.HibernateJpaVendorAdapter;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.annotation.EnableTransactionManagement;
 
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
+import javax.persistence.EntityManagerFactory;
+import javax.sql.DataSource;
+import java.util.Properties;
 
 /**
  * Main Spring configuration class.
- * Defines storage beans as separate Spring beans for each entity type.
- * Each storage map is a separate Spring bean as per requirement.
+ * Configures JPA with Hibernate as provider for PostgreSQL database.
  */
 @Configuration
 @ComponentScan(basePackages = "com.gymcrm")
 @PropertySource("classpath:application.properties")
+@EnableTransactionManagement
 public class AppConfig {
-    
+
+    @Value("${db.url}")
+    private String dbUrl;
+
+    @Value("${db.username}")
+    private String dbUsername;
+
+    @Value("${db.password}")
+    private String dbPassword;
+
+    @Value("${db.driver}")
+    private String dbDriver;
+
+    @Value("${hibernate.dialect}")
+    private String hibernateDialect;
+
+    @Value("${hibernate.hbm2ddl.auto}")
+    private String hbm2ddlAuto;
+
+    @Value("${hibernate.show_sql}")
+    private String showSql;
+
+    @Value("${hibernate.format_sql}")
+    private String formatSql;
+
     /**
-     * Trainee storage bean - ConcurrentHashMap for thread-safe operations
-     * @return Map storing Trainee entities by their ID
+     * DataSource bean
      */
     @Bean
-    public Map<Long, Trainee> traineeStorage() {
-        return new ConcurrentHashMap<>();
+    public DataSource dataSource() {
+        DriverManagerDataSource ds = new DriverManagerDataSource();
+        ds.setDriverClassName(dbDriver);
+        ds.setUrl(dbUrl);
+        ds.setUsername(dbUsername);
+        ds.setPassword(dbPassword);
+        return ds;
     }
-    
+
     /**
-     * Trainer storage bean - ConcurrentHashMap for thread-safe operations
-     * @return Map storing Trainer entities by their ID
+     * EntityManagerFactory configured with Hibernate
      */
     @Bean
-    public Map<Long, Trainer> trainerStorage() {
-        return new ConcurrentHashMap<>();
+    public LocalContainerEntityManagerFactoryBean entityManagerFactory(DataSource dataSource) {
+        LocalContainerEntityManagerFactoryBean emf =
+                new LocalContainerEntityManagerFactoryBean();
+
+        emf.setDataSource(dataSource);
+        emf.setPackagesToScan("com.gymcrm.model");
+
+        HibernateJpaVendorAdapter vendorAdapter =
+                new HibernateJpaVendorAdapter();
+        vendorAdapter.setShowSql(Boolean.parseBoolean(showSql));
+        vendorAdapter.setGenerateDdl(false); // controlled by hbm2ddl.auto
+
+        emf.setJpaVendorAdapter(vendorAdapter);
+        emf.setJpaProperties(hibernateProperties());
+
+        return emf;
     }
-    
+
     /**
-     * Training storage bean - ConcurrentHashMap for thread-safe operations
-     * @return Map storing Training entities by their ID
+     * Hibernate-specific properties
+     */
+    private Properties hibernateProperties() {
+        Properties props = new Properties();
+        props.put("hibernate.dialect", hibernateDialect);
+        props.put("hibernate.hbm2ddl.auto", hbm2ddlAuto);
+        props.put("hibernate.show_sql", showSql);
+        props.put("hibernate.format_sql", formatSql);
+        return props;
+    }
+
+    /**
+     * Transaction manager (JPA-level)
      */
     @Bean
-    public Map<Long, Training> trainingStorage() {
-        return new ConcurrentHashMap<>();
+    public PlatformTransactionManager transactionManager(
+            EntityManagerFactory emf) {
+        return new JpaTransactionManager(emf);
+    }
+
+    /**
+     * Seed constant TrainingType values from data.sql on startup.
+     */
+    @Bean
+    @DependsOn("entityManagerFactory")
+    public DataSourceInitializer dataSourceInitializer(DataSource dataSource) {
+        ResourceDatabasePopulator populator = new ResourceDatabasePopulator();
+        populator.addScript(new ClassPathResource("data.sql"));
+        DataSourceInitializer initializer = new DataSourceInitializer();
+        initializer.setDataSource(dataSource);
+        initializer.setDatabasePopulator(populator);
+        return initializer;
     }
 }
+

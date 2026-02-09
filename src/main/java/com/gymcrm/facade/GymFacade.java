@@ -35,14 +35,7 @@ public class GymFacade {
     private final TraineeService traineeService;
     private final TrainerService trainerService;
     private final TrainingService trainingService;
-    
-    /**
-     * Constructor-based dependency injection for all services.
-     * 
-     * @param traineeService the trainee service
-     * @param trainerService the trainer service
-     * @param trainingService the training service
-     */
+
     @Autowired
     public GymFacade(TraineeService traineeService, 
                      TrainerService trainerService, 
@@ -53,148 +46,130 @@ public class GymFacade {
         logger.info("GymFacade initialized with all services");
     }
     
-    // ==================== TRAINEE OPERATIONS ====================
-    
+    // ==================== AUTHENTICATION ====================
+
     /**
-     * Create a new trainee profile.
-     * Generates username and password automatically.
-     * 
-     * @param trainee the trainee to create
-     * @return the created trainee with generated credentials
+     * Authenticate a trainee by username and password matching.
+     * Must be called before any trainee operation except profile creation.
+     *
+     * @param username the trainee's username
+     * @param password the trainee's password
+     * @return true if credentials match, false otherwise
      */
+    public boolean authenticateTrainee(String username, String password) {
+        return traineeService.authenticate(username, password);
+    }
+
+    /**
+     * Authenticate a trainer by username and password matching.
+     * Must be called before any trainer operation except profile creation.
+     *
+     * @param username the trainer's username
+     * @param password the trainer's password
+     * @return true if credentials match, false otherwise
+     */
+    public boolean authenticateTrainer(String username, String password) {
+        return trainerService.authenticate(username, password);
+    }
+
+
     public Trainee createTrainee(Trainee trainee) {
         return traineeService.createTrainee(trainee);
     }
-    
-    /**
-     * Update an existing trainee profile.
-     * 
-     * @param trainee the trainee to update
-     * @return the updated trainee
-     */
+
     public Trainee updateTrainee(Trainee trainee) {
         return traineeService.updateTrainee(trainee);
     }
-    
-    /**
-     * Delete a trainee profile by ID.
-     * 
-     * @param id the trainee ID to delete
-     */
-    public void deleteTrainee(Long id) {
-        traineeService.deleteTrainee(id);
+
+    public void deleteTraineeByUsername(String username) {
+        traineeService.deleteTraineeByUsername(username);
     }
-    
-    /**
-     * Get a trainee profile by ID.
-     * 
-     * @param id the trainee ID
-     * @return Optional containing the trainee if found
-     */
+
     public Optional<Trainee> getTrainee(Long id) {
         return traineeService.getTrainee(id);
     }
-    
-    /**
-     * Get all trainee profiles.
-     * 
-     * @return list of all trainees
-     */
+
+    public Optional<Trainee> getTraineeByUsername(String username) {
+        return traineeService.getTraineeByUsername(username);
+    }
+
     public List<Trainee> getAllTrainees() {
         return traineeService.getAllTrainees();
     }
-    
-    // ==================== TRAINER OPERATIONS ====================
-    
-    /**
-     * Create a new trainer profile.
-     * Generates username and password automatically.
-     * 
-     * @param trainer the trainer to create
-     * @return the created trainer with generated credentials
-     */
+
     public Trainer createTrainer(Trainer trainer) {
         return trainerService.createTrainer(trainer);
     }
-    
-    /**
-     * Update an existing trainer profile.
-     * 
-     * @param trainer the trainer to update
-     * @return the updated trainer
-     */
+
     public Trainer updateTrainer(Trainer trainer) {
         return trainerService.updateTrainer(trainer);
     }
-    
-    /**
-     * Get a trainer profile by ID.
-     * 
-     * @param id the trainer ID
-     * @return Optional containing the trainer if found
-     */
+
     public Optional<Trainer> getTrainer(Long id) {
         return trainerService.getTrainer(id);
     }
-    
-    /**
-     * Get all trainer profiles.
-     * 
-     * @return list of all trainers
-     */
+
+    public Optional<Trainer> getTrainerByUsername(String username){
+        return trainerService.getTrainerByUsername(username);
+    }
+
     public List<Trainer> getAllTrainers() {
         return trainerService.getAllTrainers();
     }
-    
-    // ==================== TRAINING OPERATIONS ====================
-    
+
+    public List<Trainer> getUnassignedTrainersByTraineeUsername(String traineeUsername) {
+        return trainerService.getUnassignedTrainersByTraineeUsername(traineeUsername);
+    }
+
     /**
-     * Create a new training session.
-     * 
-     * @param training the training to create
-     * @return the created training with generated ID
+     * Update trainee's trainers list.
+     * Replaces the current trainer assignments with the provided list.
+     *
+     * @param traineeUsername   the trainee's username
+     * @param trainerUsernames list of trainer usernames to assign
+     * @return the updated list of assigned trainers
      */
+    public List<Trainer> updateTraineeTrainersList(String traineeUsername, List<String> trainerUsernames) {
+        return traineeService.updateTraineeTrainersList(traineeUsername, trainerUsernames);
+    }
+
     public Training createTraining(Training training) {
         return trainingService.createTraining(training);
     }
-    
-    /**
-     * Get a training by ID.
-     * 
-     * @param id the training ID
-     * @return Optional containing the training if found
-     */
+
     public Optional<Training> getTraining(Long id) {
         return trainingService.getTraining(id);
     }
-    
-    /**
-     * Get all trainings.
-     * 
-     * @return list of all trainings
-     */
+
     public List<Training> getAllTrainings() {
         return trainingService.getAllTrainings();
     }
-    
-    /**
-     * Get all trainings for a specific trainee.
-     * 
-     * @param traineeId the trainee ID
-     * @return list of trainings for the trainee
-     */
+
     public List<Training> getTrainingsByTrainee(Long traineeId) {
         return trainingService.getTrainingsByTrainee(traineeId);
     }
-    
-    /**
-     * Get all trainings for a specific trainer.
-     * 
-     * @param trainerId the trainer ID
-     * @return list of trainings for the trainer
-     */
+
     public List<Training> getTrainingsByTrainer(Long trainerId) {
         return trainingService.getTrainingsByTrainer(trainerId);
+    }
+
+    public List<Training> getTraineeTrainingsByCriteria(
+            String traineeUsername,
+            java.time.LocalDate fromDate,
+            java.time.LocalDate toDate,
+            String trainerName,
+            String trainingType) {
+        return trainingService.getTraineeTrainingsByCriteria(
+                traineeUsername, fromDate, toDate, trainerName, trainingType);
+    }
+
+    public List<Training> getTrainerTrainingsByCriteria(
+            String trainerUsername,
+            java.time.LocalDate fromDate,
+            java.time.LocalDate toDate,
+            String traineeName) {
+        return trainingService.getTrainerTrainingsByCriteria(
+                trainerUsername, fromDate, toDate, traineeName);
     }
 
     /**

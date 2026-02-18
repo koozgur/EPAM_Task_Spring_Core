@@ -106,6 +106,78 @@
             <artifactId>javax.persistence-api</artifactId>
             <version>2.2</version>
         </dependency>
+
+        <!-- Spring MVC — DispatcherServlet, @RestController, @RequestMapping -->
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-webmvc</artifactId>
+            <version>5.3.30</version>
+        </dependency>
+
+        <!-- Embedded Tomcat 9 — programmatic container startup, no WAR required -->
+        <dependency>
+            <groupId>org.apache.tomcat.embed</groupId>
+            <artifactId>tomcat-embed-core</artifactId>
+            <version>9.0.82</version>
+        </dependency>
+        <!-- tomcat-embed-el required by Tomcat at startup; omitting it causes EL engine warnings -->
+        <dependency>
+            <groupId>org.apache.tomcat.embed</groupId>
+            <artifactId>tomcat-embed-el</artifactId>
+            <version>9.0.82</version>
+        </dependency>
+
+        <!-- Jackson — JSON serialization; auto-detected by Spring MVC -->
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
+            <version>2.14.3</version>
+        </dependency>
+        <!-- jsr310 module: without this, LocalDate serializes as [2024,1,15] not "2024-01-15" -->
+        <dependency>
+            <groupId>com.fasterxml.jackson.datatype</groupId>
+            <artifactId>jackson-datatype-jsr310</artifactId>
+            <version>2.14.3</version>
+        </dependency>
+
+        <!-- Bean Validation API + Hibernate Validator runtime (must stay in sync: api 2.0 → validator 6.x) -->
+        <dependency>
+            <groupId>javax.validation</groupId>
+            <artifactId>validation-api</artifactId>
+            <version>2.0.1.Final</version>
+        </dependency>
+        <dependency>
+            <groupId>org.hibernate.validator</groupId>
+            <artifactId>hibernate-validator</artifactId>
+            <version>6.2.5.Final</version>
+        </dependency>
+
+        <!-- MapStruct runtime annotations — processor lives in annotationProcessorPaths below -->
+        <dependency>
+            <groupId>org.mapstruct</groupId>
+            <artifactId>mapstruct</artifactId>
+            <version>1.5.5.Final</version>
+        </dependency>
+
+        <!-- Springfox Swagger 2 — the last stable version compatible with Spring MVC 5 -->
+        <dependency>
+            <groupId>io.springfox</groupId>
+            <artifactId>springfox-swagger2</artifactId>
+            <version>2.9.2</version>
+        </dependency>
+        <dependency>
+            <groupId>io.springfox</groupId>
+            <artifactId>springfox-swagger-ui</artifactId>
+            <version>2.9.2</version>
+        </dependency>
+
+        <!-- json-path: required by MockMvc jsonPath() assertions at test runtime -->
+        <dependency>
+            <groupId>com.jayway.jsonpath</groupId>
+            <artifactId>json-path</artifactId>
+            <version>2.7.0</version>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <build>
@@ -117,6 +189,18 @@
                 <configuration>
                     <source>11</source>
                     <target>11</target>
+                    <!--
+                        MapStruct processor MUST be in annotationProcessorPaths, not just in <dependencies>.
+                        If placed only in <dependencies>, Maven compiles once without generating mapper
+                        implementations, causing "Cannot find symbol" errors for all @Mapper interfaces.
+                    -->
+                    <annotationProcessorPaths>
+                        <path>
+                            <groupId>org.mapstruct</groupId>
+                            <artifactId>mapstruct-processor</artifactId>
+                            <version>1.5.5.Final</version>
+                        </path>
+                    </annotationProcessorPaths>
                 </configuration>
             </plugin>
             <plugin>

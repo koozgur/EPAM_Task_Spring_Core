@@ -1,43 +1,47 @@
 package com.gymcrm;
 
-import com.gymcrm.config.AppConfig;
-import com.gymcrm.dao.TrainingTypeDAO;
-import com.gymcrm.model.TrainingType;
+import com.gymcrm.config.WebAppInitializer;
+import org.apache.catalina.Context;
+import org.apache.catalina.startup.Tomcat;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.context.ApplicationContext;
-import org.springframework.context.annotation.AnnotationConfigApplicationContext;
+import org.springframework.web.SpringServletContainerInitializer;
+
+import java.io.File;
+import java.util.Collections;
 
 public class GymCrmApplication {
-    
-    private static final Logger logger = LoggerFactory.getLogger(GymCrmApplication.class);
-    
-    public static void main(String[] args) {
-        logger.info("Starting Gym CRM Application...");
-        
-        // Initialize Spring Application Context
-        ApplicationContext context = new AnnotationConfigApplicationContext(AppConfig.class);
-        
-        logger.info("Spring Application Context initialized successfully");
-        logger.info("Loaded beans: {}", context.getBeanDefinitionCount());
-        
-        // Display all registered beans
-        String[] beanNames = context.getBeanDefinitionNames();
-        logger.info("Available beans:");
-        for (String beanName : beanNames) {
-            logger.info("  - {}", beanName);
-        }
 
-        TrainingTypeDAO trainingTypeDAO = context.getBean(TrainingTypeDAO.class);
-        logger.info("Prepopulated Training Types:");
-        for (TrainingType type : trainingTypeDAO.findAll()) {
-            logger.info("  - {}", type.getTrainingTypeName());
-        }
-        
-        logger.info("Gym CRM Application is ready!");
-        
-        // Close the context
-        ((AnnotationConfigApplicationContext) context).close();
-        logger.info("Application context closed");
+    private static final Logger logger = LoggerFactory.getLogger(GymCrmApplication.class);
+    private static final int PORT = 8080;
+
+    public static void main(String[] args) throws Exception {
+        logger.info("Starting GymCRM on port {}", PORT);
+
+        Tomcat tomcat = new Tomcat();
+        tomcat.setPort(PORT);
+
+        // Tomcat needs a work directory for session persistence
+        tomcat.setBaseDir(new File(System.getProperty("java.io.tmpdir"), "gymcrm-tomcat").getAbsolutePath());
+
+        // getConnector() must be called explicitly before start().
+        // Otherwise, no HTTP connector is created and the port is never bound.
+        tomcat.getConnector();
+
+        // Context path root
+        Context ctx = tomcat.addContext("",
+                new File(System.getProperty("java.io.tmpdir")).getAbsolutePath());
+
+        //Manually invoking SpringServletContainerInitializer so WebAppInitializer is executed in embedded Tomcat
+        ctx.addServletContainerInitializer(
+                new SpringServletContainerInitializer(),
+                Collections.singleton(WebAppInitializer.class)
+        );
+
+        tomcat.start();
+        logger.info("GymCRM started — http://localhost:{}", PORT);
+
+        // Block the main thread to let Tomcat run until the process is terminated.
+        tomcat.getServer().await();
     }
 }

@@ -28,6 +28,7 @@ public class TraineeServiceImpl implements TraineeService {
     private TraineeDAO traineeDAO;
     private TrainerDAO trainerDAO;
     private CredentialsGenerator credentialsGenerator;
+    private UserService userService;
 
     @Autowired
     public void setTraineeDAO(TraineeDAO traineeDAO) {
@@ -42,6 +43,11 @@ public class TraineeServiceImpl implements TraineeService {
     @Autowired
     public void setCredentialsGenerator(CredentialsGenerator credentialsGenerator) {
         this.credentialsGenerator = credentialsGenerator;
+    }
+
+    @Autowired
+    public void setUserService(UserService userService) {
+        this.userService = userService;
     }
 
     @Override
@@ -113,22 +119,7 @@ public class TraineeServiceImpl implements TraineeService {
     @Override
     @Transactional(readOnly = true)
     public boolean authenticate(String username, String password) {
-        if (username == null || password == null) {
-            logger.warn("Authentication attempt with null credentials");
-            return false;
-        }
-
-        Optional<Trainee> traineeOpt = traineeDAO.findByUsername(username);
-        if (traineeOpt.isEmpty()) {
-            logger.warn("Authentication failed: trainee not found for username: {}", username);
-            return false;
-        }
-
-        boolean matches = password.equals(traineeOpt.get().getUser().getPassword());
-        if (!matches) {
-            logger.warn("Authentication failed: password mismatch for username: {}", username);
-        }
-        return matches;
+        return userService.authenticate(username, password);
     }
 
     @Override

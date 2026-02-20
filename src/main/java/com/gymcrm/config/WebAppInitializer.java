@@ -1,8 +1,13 @@
 package com.gymcrm.config;
 
+import org.springframework.web.filter.DelegatingFilterProxy;
 import org.springframework.web.servlet.support.AbstractAnnotationConfigDispatcherServletInitializer;
 
-import javax.servlet.Filter;
+import javax.servlet.DispatcherType;
+import javax.servlet.FilterRegistration;
+import javax.servlet.ServletContext;
+import javax.servlet.ServletException;
+import java.util.EnumSet;
 
 /**
  * Replaces web.xml. Discovered via Servlet 3.0 SPI; in embedded mode passed explicitly
@@ -33,12 +38,24 @@ public class WebAppInitializer extends AbstractAnnotationConfigDispatcherServlet
     }
 
     /**
-     * Filters registered here once implemented:
-     *   Phase 3 — AuthenticationFilter (Basic auth)
-     *   Phase 4 — TransactionLoggingFilter (MDC), RestLoggingFilter (request/response log)
+     * Register filters via DelegatingFilterProxy so Spring resolves @Component beans
+     * (with injected dependencies) from the servlet context at first request.
+     * Order: transactionLoggingFilter → authenticationFilter → restLoggingFilter (Phase 8)
      */
     @Override
-    protected Filter[] getServletFilters() {
-        return new Filter[0];
+    public void onStartup(ServletContext servletContext) throws ServletException {
+        super.onStartup(servletContext);
+
+        //TODO: register transactionLoggingFilter here BEFORE authenticationFilter
+
+        FilterRegistration.Dynamic authFilter = servletContext.addFilter(
+                "authenticationFilter",
+                new DelegatingFilterProxy("authenticationFilter")
+        );
+        authFilter.addMappingForUrlPatterns(
+                EnumSet.of(DispatcherType.REQUEST), false, "/*"
+        );
+
+        //TODO: register restLoggingFilter here AFTER authenticationFilter
     }
 }

@@ -24,7 +24,8 @@ import java.util.List;
 @ComponentScan(basePackages = {
         "com.gymcrm.controller",
         "com.gymcrm.mapper",
-        "com.gymcrm.facade"
+        "com.gymcrm.facade",
+        "com.gymcrm.exception"
 })
 public class WebMvcConfig implements WebMvcConfigurer {
 

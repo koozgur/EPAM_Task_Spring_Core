@@ -122,7 +122,7 @@ class TrainerServiceImplTest {
         assertNotNull(result);
         assertEquals("Michael", testTrainer.getUser().getFirstName());
         assertFalse(testTrainer.getUser().getIsActive());
-        assertEquals(newType, testTrainer.getSpecialization());
+        assertEquals(testSpecialization, testTrainer.getSpecialization());
         verify(trainerDAO).update(testTrainer);
     }
 

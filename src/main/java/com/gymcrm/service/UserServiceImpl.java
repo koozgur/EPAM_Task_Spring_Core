@@ -1,6 +1,9 @@
 package com.gymcrm.service;
 
 import com.gymcrm.dao.UserDAO;
+import com.gymcrm.exception.AuthenticationException;
+import com.gymcrm.exception.NotFoundException;
+import com.gymcrm.model.User;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -38,5 +41,17 @@ public class UserServiceImpl implements UserService {
                     logger.warn("Authentication failed: user not found for username: {}", username);
                     return false;
                 });
+    }
+
+    @Override
+    @Transactional
+    public void changePassword(String username, String oldPassword, String newPassword) {
+        User user = userDAO.findByUsername(username)
+                .orElseThrow(() -> new NotFoundException("User not found: " + username));
+        if (!oldPassword.equals(user.getPassword())) {
+            throw new AuthenticationException("Old password is incorrect");
+        }
+        user.setPassword(newPassword);
+        logger.info("Password changed for username: {}", username);
     }
 }

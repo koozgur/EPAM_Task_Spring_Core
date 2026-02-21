@@ -90,7 +90,7 @@ public class TrainerServiceImpl implements TrainerService {
         existingUser.setFirstName(trainer.getUser().getFirstName());
         existingUser.setLastName(trainer.getUser().getLastName());
         existingUser.setIsActive(trainer.getUser().getIsActive());
-        existing.setSpecialization(trainer.getSpecialization());
+        // specialization is read-only per spec (task note 9) — intentionally not updated here
 
         Trainer updated = trainerDAO.update(existing);
         logger.info("Updated trainer profile for username: {}", username);

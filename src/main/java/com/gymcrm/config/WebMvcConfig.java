@@ -23,7 +23,8 @@ import java.util.List;
 @ComponentScan(basePackages = {
         "com.gymcrm.controller",
         "com.gymcrm.filter",
-        "com.gymcrm.mapper"
+        "com.gymcrm.mapper",
+        "com.gymcrm.facade"
 })
 public class WebMvcConfig implements WebMvcConfigurer {
 

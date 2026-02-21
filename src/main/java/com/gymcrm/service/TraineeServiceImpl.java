@@ -62,9 +62,7 @@ public class TraineeServiceImpl implements TraineeService {
         user.setPassword(password);
         user.setIsActive(true);
 
-        Trainee created = traineeDAO.create(trainee);
-        logger.info("Created trainee profile with username: {}", username);
-        return created;
+        return traineeDAO.create(trainee);
     }
 
     @Override
@@ -84,9 +82,7 @@ public class TraineeServiceImpl implements TraineeService {
         existing.setDateOfBirth(trainee.getDateOfBirth());
         existing.setAddress(trainee.getAddress());
 
-        Trainee updated = traineeDAO.update(existing);
-        logger.info("Updated trainee profile for username: {}", username);
-        return updated;
+        return traineeDAO.update(existing);
     }
 
     @Override
@@ -101,7 +97,6 @@ public class TraineeServiceImpl implements TraineeService {
                 "Trainee not found with username: " + username));
 
         traineeDAO.delete(trainee.getId());
-        logger.info("Deleted trainee profile for username: {}", username);
     }
 
     @Override
@@ -128,9 +123,7 @@ public class TraineeServiceImpl implements TraineeService {
         if (username == null) {
             throw new ValidationException("Username must not be null");
         }
-        Optional<Trainee> result = traineeDAO.findByUsername(username);
-        logger.info("Selected trainee by username: {}, found: {}", username, result.isPresent());
-        return result;
+        return traineeDAO.findByUsername(username);
     }
 
     @Override
@@ -151,7 +144,6 @@ public class TraineeServiceImpl implements TraineeService {
 
         trainee.getUser().setPassword(newPassword);
         traineeDAO.update(trainee);
-        logger.info("Password changed for trainee: {}", username);
     }
 
     @Override
@@ -171,7 +163,6 @@ public class TraineeServiceImpl implements TraineeService {
 
         trainee.getUser().setIsActive(true);
         traineeDAO.update(trainee);
-        logger.info("Activated trainee: {}", username);
     }
 
     @Override
@@ -191,7 +182,6 @@ public class TraineeServiceImpl implements TraineeService {
 
         trainee.getUser().setIsActive(false);
         traineeDAO.update(trainee);
-        logger.info("Deactivated trainee: {}", username);
     }
 
     @Override
@@ -219,9 +209,6 @@ public class TraineeServiceImpl implements TraineeService {
         trainee.getTrainers().clear();
         trainee.getTrainers().addAll(newTrainers);
         traineeDAO.update(trainee);
-
-        logger.info("Updated trainers list for trainee: {}, trainers count: {}",
-                traineeUsername, newTrainers.size());
         return newTrainers;
     }
 

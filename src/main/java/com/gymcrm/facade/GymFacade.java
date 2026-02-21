@@ -1,196 +1,247 @@
 package com.gymcrm.facade;
 
+import com.gymcrm.dao.TrainingTypeDAO;
+import com.gymcrm.dto.request.AddTrainingRequest;
+import com.gymcrm.dto.request.ChangePasswordRequest;
+import com.gymcrm.dto.request.TraineeRegistrationRequest;
+import com.gymcrm.dto.request.TrainerRegistrationRequest;
+import com.gymcrm.dto.request.UpdateTraineeRequest;
+import com.gymcrm.dto.request.UpdateTraineeTrainersRequest;
+import com.gymcrm.dto.request.UpdateTrainerRequest;
+import com.gymcrm.dto.response.RegistrationResponse;
+import com.gymcrm.dto.response.TraineeProfileResponse;
+import com.gymcrm.dto.response.TraineeTrainingResponse;
+import com.gymcrm.dto.response.TrainerProfileResponse;
+import com.gymcrm.dto.response.TrainerSummaryResponse;
+import com.gymcrm.dto.response.TrainerTrainingResponse;
+import com.gymcrm.dto.response.TrainingTypeResponse;
+import com.gymcrm.dto.response.UpdateTraineeResponse;
+import com.gymcrm.dto.response.UpdateTrainerResponse;
+import com.gymcrm.exception.NotFoundException;
+import com.gymcrm.mapper.TraineeMapper;
+import com.gymcrm.mapper.TrainerMapper;
+import com.gymcrm.mapper.TrainingMapper;
+import com.gymcrm.mapper.TrainingTypeMapper;
 import com.gymcrm.model.Trainee;
 import com.gymcrm.model.Trainer;
 import com.gymcrm.model.Training;
+import com.gymcrm.model.TrainingType;
+import com.gymcrm.model.User;
 import com.gymcrm.service.TraineeService;
 import com.gymcrm.service.TrainerService;
 import com.gymcrm.service.TrainingService;
+import com.gymcrm.service.UserService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.util.List;
-import java.util.Optional;
+import java.util.stream.Collectors;
 
 /**
- * Facade class providing a unified interface to the Gym CRM system.
- * This facade simplifies client interactions by providing a single entry point
- * to all trainee, trainer, and training operations. It delegates requests to
- * the appropriate underlying services while providing comprehensive logging.
- * Benefits:
- * - Simplified interface for clients
- * - Decouples clients from internal service structure
- * - Centralized logging and cross-cutting concerns
- * - Single point of entry for all gym-related operations
+ * Mapping done in facade layer; controllers deal in DTOs only, entities mapped to DTos here
  */
 @Component
 public class GymFacade {
-    //Logging should not create noise.
-    //Good logging explains why something happened, not how the code executed.
-    //To be more specific; if code makes a choice, log it. If code only forwards data, don't.
     private static final Logger logger = LoggerFactory.getLogger(GymFacade.class);
-    
+
     private final TraineeService traineeService;
     private final TrainerService trainerService;
     private final TrainingService trainingService;
+    private final UserService userService;
+    private final TrainingTypeDAO trainingTypeDAO;
+    private final TraineeMapper traineeMapper;
+    private final TrainerMapper trainerMapper;
+    private final TrainingMapper trainingMapper;
+    private final TrainingTypeMapper trainingTypeMapper;
 
     @Autowired
-    public GymFacade(TraineeService traineeService, 
-                     TrainerService trainerService, 
-                     TrainingService trainingService) {
+    public GymFacade(TraineeService traineeService,
+                     TrainerService trainerService,
+                     TrainingService trainingService,
+                     UserService userService,
+                     TrainingTypeDAO trainingTypeDAO,
+                     TraineeMapper traineeMapper,
+                     TrainerMapper trainerMapper,
+                     TrainingMapper trainingMapper,
+                     TrainingTypeMapper trainingTypeMapper) {
         this.traineeService = traineeService;
         this.trainerService = trainerService;
         this.trainingService = trainingService;
-        logger.info("GymFacade initialized with all services");
-    }
-    
-    // ==================== AUTHENTICATION ====================
-
-    /**
-     * Authenticate a trainee by username and password matching.
-     * Must be called before any trainee operation except profile creation.
-     *
-     * @param username the trainee's username
-     * @param password the trainee's password
-     * @return true if credentials match, false otherwise
-     */
-    public boolean authenticateTrainee(String username, String password) {
-        return traineeService.authenticate(username, password);
+        this.userService = userService;
+        this.trainingTypeDAO = trainingTypeDAO;
+        this.traineeMapper = traineeMapper;
+        this.trainerMapper = trainerMapper;
+        this.trainingMapper = trainingMapper;
+        this.trainingTypeMapper = trainingTypeMapper;
     }
 
-    /**
-     * Authenticate a trainer by username and password matching.
-     * Must be called before any trainer operation except profile creation.
-     *
-     * @param username the trainer's username
-     * @param password the trainer's password
-     * @return true if credentials match, false otherwise
-     */
-    public boolean authenticateTrainer(String username, String password) {
-        return trainerService.authenticate(username, password);
+    @Transactional
+    public RegistrationResponse registerTrainee(TraineeRegistrationRequest req) {
+        User user = new User();
+        user.setFirstName(req.getFirstName());
+        user.setLastName(req.getLastName());
+
+        Trainee trainee = new Trainee(user, req.getDateOfBirth(), req.getAddress());
+
+        Trainee created = traineeService.createTrainee(trainee);
+        return new RegistrationResponse(
+                created.getUser().getUsername(),
+                created.getUser().getPassword());
     }
 
+    @Transactional
+    public RegistrationResponse registerTrainer(TrainerRegistrationRequest req) {
+        TrainingType specialization = trainingTypeDAO.findById(req.getSpecializationId())
+                .orElseThrow(() -> new NotFoundException(
+                        "Training type not found: " + req.getSpecializationId()));
 
-    public Trainee createTrainee(Trainee trainee) {
-        return traineeService.createTrainee(trainee);
+        User user = new User();
+        user.setFirstName(req.getFirstName());
+        user.setLastName(req.getLastName());
+
+        Trainer trainer = new Trainer(user, specialization);
+
+        Trainer created = trainerService.createTrainer(trainer);
+        return new RegistrationResponse(
+                created.getUser().getUsername(),
+                created.getUser().getPassword());
     }
 
-    public Trainee updateTrainee(Trainee trainee) {
-        return traineeService.updateTrainee(trainee);
+    @Transactional
+    public void changePassword(ChangePasswordRequest req) {
+        userService.changePassword(req.getUsername(), req.getOldPassword(), req.getNewPassword());
     }
 
-    public void deleteTraineeByUsername(String username) {
+    @Transactional(readOnly = true)
+    public TraineeProfileResponse getTraineeProfile(String username) {
+        Trainee trainee = traineeService.getTraineeByUsername(username)
+                .orElseThrow(() -> new NotFoundException("Trainee not found: " + username));
+        return traineeMapper.toProfileResponse(trainee);
+    }
+
+    @Transactional
+    public UpdateTraineeResponse updateTrainee(UpdateTraineeRequest req) {
+        User user = new User(req.getFirstName(), req.getLastName(), req.getUsername(), req.getIsActive());
+
+        Trainee trainee = new Trainee();
+        trainee.setUser(user);
+        trainee.setDateOfBirth(req.getDateOfBirth());
+        trainee.setAddress(req.getAddress());
+
+        Trainee updated = traineeService.updateTrainee(trainee);
+        return traineeMapper.toUpdateResponse(updated);
+    }
+
+    @Transactional
+    public void deleteTrainee(String username) {
         traineeService.deleteTraineeByUsername(username);
     }
 
-    public Optional<Trainee> getTrainee(Long id) {
-        return traineeService.getTrainee(id);
+    @Transactional(readOnly = true)
+    public TrainerProfileResponse getTrainerProfile(String username) {
+        Trainer trainer = trainerService.getTrainerByUsername(username)
+                .orElseThrow(() -> new NotFoundException("Trainer not found: " + username));
+        return trainerMapper.toProfileResponse(trainer);
     }
 
-    public Optional<Trainee> getTraineeByUsername(String username) {
-        return traineeService.getTraineeByUsername(username);
+    @Transactional
+    public UpdateTrainerResponse updateTrainer(UpdateTrainerRequest req) {
+        User user = new User();
+        user.setUsername(req.getUsername());
+        user.setFirstName(req.getFirstName());
+        user.setLastName(req.getLastName());
+        user.setIsActive(req.getIsActive());
+
+        Trainer trainer = new Trainer();
+        trainer.setUser(user);
+        Trainer updated = trainerService.updateTrainer(trainer);
+        return trainerMapper.toUpdateResponse(updated);
     }
 
-    public List<Trainee> getAllTrainees() {
-        return traineeService.getAllTrainees();
+    @Transactional(readOnly = true)
+    public List<TrainerSummaryResponse> getUnassignedTrainers(String traineeUsername) {
+        return trainerService.getUnassignedTrainersByTraineeUsername(traineeUsername)
+                .stream()
+                .map(trainerMapper::toSummary)
+                .collect(Collectors.toList());
     }
 
-    public Trainer createTrainer(Trainer trainer) {
-        return trainerService.createTrainer(trainer);
+    @Transactional
+    public List<TrainerSummaryResponse> updateTraineeTrainers(UpdateTraineeTrainersRequest req) {
+        List<Trainer> trainers = traineeService.updateTraineeTrainersList(
+                req.getTraineeUsername(), req.getTrainerUsernames());
+        return trainers.stream()
+                .map(trainerMapper::toSummary)
+                .collect(Collectors.toList());
     }
 
-    public Trainer updateTrainer(Trainer trainer) {
-        return trainerService.updateTrainer(trainer);
-    }
-
-    public Optional<Trainer> getTrainer(Long id) {
-        return trainerService.getTrainer(id);
-    }
-
-    public Optional<Trainer> getTrainerByUsername(String username){
-        return trainerService.getTrainerByUsername(username);
-    }
-
-    public List<Trainer> getAllTrainers() {
-        return trainerService.getAllTrainers();
-    }
-
-    public List<Trainer> getUnassignedTrainersByTraineeUsername(String traineeUsername) {
-        return trainerService.getUnassignedTrainersByTraineeUsername(traineeUsername);
-    }
-
-    /**
-     * Update trainee's trainers list.
-     * Replaces the current trainer assignments with the provided list.
-     *
-     * @param traineeUsername   the trainee's username
-     * @param trainerUsernames list of trainer usernames to assign
-     * @return the updated list of assigned trainers
-     */
-    public List<Trainer> updateTraineeTrainersList(String traineeUsername, List<String> trainerUsernames) {
-        return traineeService.updateTraineeTrainersList(traineeUsername, trainerUsernames);
-    }
-
-    public Training createTraining(Training training) {
-        return trainingService.createTraining(training);
-    }
-
-    public Optional<Training> getTraining(Long id) {
-        return trainingService.getTraining(id);
-    }
-
-    public List<Training> getAllTrainings() {
-        return trainingService.getAllTrainings();
-    }
-
-    public List<Training> getTrainingsByTrainee(Long traineeId) {
-        return trainingService.getTrainingsByTrainee(traineeId);
-    }
-
-    public List<Training> getTrainingsByTrainer(Long trainerId) {
-        return trainingService.getTrainingsByTrainer(trainerId);
-    }
-
-    public List<Training> getTraineeTrainingsByCriteria(
-            String traineeUsername,
-            java.time.LocalDate fromDate,
-            java.time.LocalDate toDate,
-            String trainerName,
-            String trainingType) {
+    @Transactional(readOnly = true)
+    public List<TraineeTrainingResponse> getTraineeTrainings(
+            String username, LocalDate from, LocalDate to,
+            String trainerName, String trainingType) {
         return trainingService.getTraineeTrainingsByCriteria(
-                traineeUsername, fromDate, toDate, trainerName, trainingType);
+                        username, from, to, trainerName, trainingType)
+                .stream()
+                .map(trainingMapper::toTraineeResponse)
+                .collect(Collectors.toList());
     }
 
-    public List<Training> getTrainerTrainingsByCriteria(
-            String trainerUsername,
-            java.time.LocalDate fromDate,
-            java.time.LocalDate toDate,
-            String traineeName) {
-        return trainingService.getTrainerTrainingsByCriteria(
-                trainerUsername, fromDate, toDate, traineeName);
+    @Transactional(readOnly = true)
+    public List<TrainerTrainingResponse> getTrainerTrainings(
+            String username, LocalDate from, LocalDate to, String traineeName) {
+        return trainingService.getTrainerTrainingsByCriteria(username, from, to, traineeName)
+                .stream()
+                .map(trainingMapper::toTrainerResponse)
+                .collect(Collectors.toList());
     }
 
-    /**
-     * Get a summary of the gym system.
-     * 
-     * @return a string summary containing counts of trainees, trainers, and trainings
-     */
-    public String getGymSummary() {
-        int traineeCount = traineeService.getAllTrainees().size();
-        int trainerCount = trainerService.getAllTrainers().size();
-        int trainingCount = trainingService.getAllTrainings().size();
+    @Transactional
+    public void addTraining(AddTrainingRequest req) {
+        Trainee trainee = traineeService.getTraineeByUsername(req.getTraineeUsername())
+                .orElseThrow(() -> new NotFoundException(
+                        "Trainee not found: " + req.getTraineeUsername()));
+        Trainer trainer = trainerService.getTrainerByUsername(req.getTrainerUsername())
+                .orElseThrow(() -> new NotFoundException(
+                        "Trainer not found: " + req.getTrainerUsername()));
 
-        logger.info(
-                "Use case: gym summary generated (trainees={}, trainers={}, trainings={})",
-                traineeCount, trainerCount, trainingCount
-        );
+        Training training = new Training(
+                trainee,
+                trainer,
+                req.getName(),
+                trainer.getSpecialization(),  // training type comes from the trainer's specialization
+                req.getDate(),
+                req.getDuration());
 
-        return String.format(
-                "Gym CRM Summary: %d Trainees, %d Trainers, %d Training Sessions",
-                traineeCount, trainerCount, trainingCount
-        );
+        trainingService.createTraining(training);
     }
 
+    @Transactional
+    public void setTraineeActive(String username, Boolean isActive) {
+        if (isActive) {
+            traineeService.activateTrainee(username);
+        } else {
+            traineeService.deactivateTrainee(username);
+        }
+    }
+
+    @Transactional
+    public void setTrainerActive(String username, Boolean isActive) {
+        if (isActive) {
+            trainerService.activateTrainer(username);
+        } else {
+            trainerService.deactivateTrainer(username);
+        }
+    }
+
+    @Transactional(readOnly = true)
+    public List<TrainingTypeResponse> getAllTrainingTypes() {
+        return trainingTypeDAO.findAll()
+                .stream()
+                .map(trainingTypeMapper::toResponse)
+                .collect(Collectors.toList());
+    }
 }

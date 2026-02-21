@@ -53,9 +53,7 @@ public class TrainerServiceImpl implements TrainerService {
         user.setPassword(password);
         user.setIsActive(true);
 
-        Trainer created = trainerDAO.create(trainer);
-        logger.info("Created trainer profile with username: {}", username);
-        return created;
+        return trainerDAO.create(trainer);
     }
 
     @Override
@@ -70,9 +68,7 @@ public class TrainerServiceImpl implements TrainerService {
         if (username == null) {
             throw new ValidationException("Username must not be null");
         }
-        Optional<Trainer> result = trainerDAO.findByUsername(username);
-        logger.info("Selected trainer by username: {}, found: {}", username, result.isPresent());
-        return result;
+        return trainerDAO.findByUsername(username);
     }
 
     @Override
@@ -92,9 +88,7 @@ public class TrainerServiceImpl implements TrainerService {
         existingUser.setIsActive(trainer.getUser().getIsActive());
         // specialization is read-only per spec (task note 9) — intentionally not updated here
 
-        Trainer updated = trainerDAO.update(existing);
-        logger.info("Updated trainer profile for username: {}", username);
-        return updated;
+        return trainerDAO.update(existing);
     }
 
     @Override
@@ -115,7 +109,6 @@ public class TrainerServiceImpl implements TrainerService {
 
         trainer.getUser().setPassword(newPassword);
         trainerDAO.update(trainer);
-        logger.info("Password changed for trainer: {}", username);
     }
 
     @Override
@@ -135,7 +128,6 @@ public class TrainerServiceImpl implements TrainerService {
 
         trainer.getUser().setIsActive(true);
         trainerDAO.update(trainer);
-        logger.info("Activated trainer: {}", username);
     }
 
     @Override
@@ -155,7 +147,6 @@ public class TrainerServiceImpl implements TrainerService {
 
         trainer.getUser().setIsActive(false);
         trainerDAO.update(trainer);
-        logger.info("Deactivated trainer: {}", username);
     }
 
     @Override

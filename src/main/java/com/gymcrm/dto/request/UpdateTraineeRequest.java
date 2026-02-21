@@ -6,10 +6,12 @@ import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
 import java.time.LocalDate;
 
+/**
+ * Username is omitted: the URI path variable is the resource identifier (REST convention),
+   Accepting it here would imply mutability and
+   force callers to send a field the server discards.
+ */
 public class UpdateTraineeRequest {
-
-    @NotBlank
-    private String username;
 
     @NotBlank
     private String firstName;
@@ -26,9 +28,6 @@ public class UpdateTraineeRequest {
     private Boolean isActive;
 
     public UpdateTraineeRequest() {}
-
-    public String getUsername() { return username; }
-    public void setUsername(String username) { this.username = username; }
 
     public String getFirstName() { return firstName; }
     public void setFirstName(String firstName) { this.firstName = firstName; }

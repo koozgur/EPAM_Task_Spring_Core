@@ -148,14 +148,13 @@ class GymFacadeTest {
         when(traineeMapper.toUpdateResponse(updated)).thenReturn(expected);
 
         UpdateTraineeRequest req = new UpdateTraineeRequest();
-        req.setUsername("john.doe1");
         req.setFirstName("John");
         req.setLastName("Doe");
         req.setIsActive(true);
         req.setDateOfBirth(LocalDate.of(1990, 5, 10));
         req.setAddress("New Address");
 
-        UpdateTraineeResponse result = facade.updateTrainee(req);
+        UpdateTraineeResponse result = facade.updateTrainee("john.doe1", req);
 
         assertThat(result).isSameAs(expected);
         ArgumentCaptor<Trainee> captor = ArgumentCaptor.forClass(Trainee.class);
@@ -204,12 +203,11 @@ class GymFacadeTest {
         when(trainerMapper.toUpdateResponse(updated)).thenReturn(new UpdateTrainerResponse());
 
         UpdateTrainerRequest req = new UpdateTrainerRequest();
-        req.setUsername("jane.smith1");
         req.setFirstName("Jane");
         req.setLastName("Smith");
         req.setIsActive(false);
 
-        facade.updateTrainer(req);
+        facade.updateTrainer("jane.smith1", req);
 
         ArgumentCaptor<Trainer> captor = ArgumentCaptor.forClass(Trainer.class);
         verify(trainerService).updateTrainer(captor.capture());
@@ -243,10 +241,9 @@ class GymFacadeTest {
         when(trainerMapper.toSummary(t)).thenReturn(summary);
 
         UpdateTraineeTrainersRequest req = new UpdateTraineeTrainersRequest();
-        req.setTraineeUsername("john.doe1");
         req.setTrainerUsernames(List.of("jane.smith1"));
 
-        List<TrainerSummaryResponse> result = facade.updateTraineeTrainers(req);
+        List<TrainerSummaryResponse> result = facade.updateTraineeTrainers("john.doe1", req);
 
         assertThat(result).containsExactly(summary);
     }

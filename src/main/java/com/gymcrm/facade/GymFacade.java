@@ -124,8 +124,8 @@ public class GymFacade {
     }
 
     @Transactional
-    public UpdateTraineeResponse updateTrainee(UpdateTraineeRequest req) {
-        User user = new User(req.getFirstName(), req.getLastName(), req.getUsername(), req.getIsActive());
+    public UpdateTraineeResponse updateTrainee(String username, UpdateTraineeRequest req) {
+        User user = new User(req.getFirstName(), req.getLastName(), username, req.getIsActive());
 
         Trainee trainee = new Trainee();
         trainee.setUser(user);
@@ -149,9 +149,9 @@ public class GymFacade {
     }
 
     @Transactional
-    public UpdateTrainerResponse updateTrainer(UpdateTrainerRequest req) {
+    public UpdateTrainerResponse updateTrainer(String username, UpdateTrainerRequest req) {
         User user = new User();
-        user.setUsername(req.getUsername());
+        user.setUsername(username);
         user.setFirstName(req.getFirstName());
         user.setLastName(req.getLastName());
         user.setIsActive(req.getIsActive());
@@ -171,9 +171,9 @@ public class GymFacade {
     }
 
     @Transactional
-    public List<TrainerSummaryResponse> updateTraineeTrainers(UpdateTraineeTrainersRequest req) {
+    public List<TrainerSummaryResponse> updateTraineeTrainers(String username, UpdateTraineeTrainersRequest req) {
         List<Trainer> trainers = traineeService.updateTraineeTrainersList(
-                req.getTraineeUsername(), req.getTrainerUsernames());
+                username, req.getTrainerUsernames());
         return trainers.stream()
                 .map(trainerMapper::toSummary)
                 .collect(Collectors.toList());

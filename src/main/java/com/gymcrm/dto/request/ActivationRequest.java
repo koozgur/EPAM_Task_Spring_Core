@@ -1,20 +1,17 @@
 package com.gymcrm.dto.request;
 
-import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
 
+/**
+ * Username is omitted: the URI path variable identifies the resource.
+ * Repeating it in the body would force callers to send a field that is unused
+ */
 public class ActivationRequest {
-
-    @NotBlank
-    private String username;
 
     @NotNull
     private Boolean isActive;
 
     public ActivationRequest() {}
-
-    public String getUsername() { return username; }
-    public void setUsername(String username) { this.username = username; }
 
     public Boolean getIsActive() { return isActive; }
     public void setIsActive(Boolean isActive) { this.isActive = isActive; }

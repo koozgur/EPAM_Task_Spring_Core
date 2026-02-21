@@ -21,15 +21,16 @@ import javax.sql.DataSource;
 import java.util.Properties;
 
 /**
- * Root (parent) context — non-web layer only: DAOs, services, utilities.
- * Controllers/filters/mappers are excluded; they belong to the servlet context (WebMvcConfig)
- * and require MVC infrastructure that does not exist here.
+ * Root (parent) context — non-web layer and servlet filters.
+ * Filters live here because the servlet container initialises them BEFORE the child
+ * (servlet) context starts; DelegatingFilterProxy can only look up beans in the root context.
  */
 @Configuration
 @ComponentScan(basePackages = {
         "com.gymcrm.dao",
         "com.gymcrm.service",
-        "com.gymcrm.util"
+        "com.gymcrm.util",
+        "com.gymcrm.filter"
 })
 @PropertySource("classpath:application.properties")
 @EnableTransactionManagement

@@ -14,15 +14,15 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 import java.util.List;
 
 /**
- * Servlet (child) context — MVC infrastructure and web-layer beans.
+ * Servlet (child) context — MVC infrastructure, controllers, mappers, facade.
+ * Filters are intentionally excluded: they belong to the root context because
+ * DelegatingFilterProxy resolves them before the child context starts.
  * @EnableWebMvc lives here so HandlerMapping is initialised after controllers are registered.
- * Scans only controller/filter/mapper to avoid double-instantiating root-context beans.
  */
 @Configuration
 @EnableWebMvc
 @ComponentScan(basePackages = {
         "com.gymcrm.controller",
-        "com.gymcrm.filter",
         "com.gymcrm.mapper",
         "com.gymcrm.facade"
 })

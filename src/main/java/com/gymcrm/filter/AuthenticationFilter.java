@@ -21,9 +21,8 @@ import java.util.Set;
 @Component
 public class AuthenticationFilter extends OncePerRequestFilter {
 
-    // O(1) exact-match — avoids endsWith partial-match risk (e.g. "/admin/trainees/register")
     private static final Set<String> PUBLIC_PATHS = Set.of(
-            "/trainees/register", "/trainers/register", "/training-types", "/login"
+            "/trainees/register", "/trainers/register", "/training-types"
     );
 
     private final UserService userService;

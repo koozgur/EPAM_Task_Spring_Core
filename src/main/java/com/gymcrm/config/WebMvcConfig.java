@@ -2,32 +2,21 @@ package com.gymcrm.config;
 
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.MediaType;
 import org.springframework.http.converter.HttpMessageConverter;
 import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
 import org.springframework.web.servlet.config.annotation.ContentNegotiationConfigurer;
-import org.springframework.web.servlet.config.annotation.EnableWebMvc;
-import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 import java.util.List;
 
 /**
- * Servlet (child) context — MVC infrastructure, controllers, mappers, facade.
- * Filters are intentionally excluded: they belong to the root context because
- * DelegatingFilterProxy resolves them before the child context starts.
- * @EnableWebMvc lives here so HandlerMapping is initialised after controllers are registered.
+ * MVC customization layer on top of Spring Boot auto-configuration.
+ *
+ * Keep only custom behavior that differs from Boot defaults.
  */
 @Configuration
-@EnableWebMvc
-@ComponentScan(basePackages = {
-        "com.gymcrm.controller",
-        "com.gymcrm.mapper",
-        "com.gymcrm.facade",
-        "com.gymcrm.exception"
-})
 public class WebMvcConfig implements WebMvcConfigurer {
 
     /**
@@ -50,13 +39,5 @@ public class WebMvcConfig implements WebMvcConfigurer {
     @Override
     public void configureContentNegotiation(ContentNegotiationConfigurer configurer) {
         configurer.defaultContentType(MediaType.APPLICATION_JSON);
-    }
-
-    @Override
-    public void addResourceHandlers(ResourceHandlerRegistry registry) {
-        registry.addResourceHandler("swagger-ui.html")
-                .addResourceLocations("classpath:/META-INF/resources/");
-        registry.addResourceHandler("/webjars/**")
-                .addResourceLocations("classpath:/META-INF/resources/webjars/");
     }
 }

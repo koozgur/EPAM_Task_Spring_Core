@@ -2,7 +2,6 @@ package com.gymcrm.filter;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 import org.springframework.web.util.ContentCachingRequestWrapper;
 import org.springframework.web.util.ContentCachingResponseWrapper;
@@ -22,7 +21,6 @@ import java.util.regex.Pattern;
  * <p>
  * Wraps authentication to ensure 401 responses are also logged.
  */
-@Component("restLoggingFilter")
 public class RestLoggingFilter extends OncePerRequestFilter {
 
     private static final Logger log = LoggerFactory.getLogger(RestLoggingFilter.class);

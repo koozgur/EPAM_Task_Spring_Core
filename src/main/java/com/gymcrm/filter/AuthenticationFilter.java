@@ -6,8 +6,6 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.gymcrm.dto.response.ErrorResponse;
 import com.gymcrm.service.UserService;
 import org.slf4j.MDC;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import jakarta.servlet.FilterChain;
@@ -24,22 +22,20 @@ import java.util.Set;
  * Validates Basic auth on every non-public request.
  * Delegates credential check to UserService.
  */
-@Component
 public class AuthenticationFilter extends OncePerRequestFilter {
 
     private static final Set<String> PUBLIC_EXACT_PATHS = Set.of(
-            "/trainees/register", "/trainers/register", "/swagger-ui.html", "/v3/api-docs", "/v3/api-docs.yaml"
+            "/trainees/register", "/trainers/register", "/v3/api-docs", "/v3/api-docs.yaml"
     );
 
     private static final Set<String> PUBLIC_PREFIX_PATHS = Set.of(
-            "/swagger-ui", "/v3/api-docs", "/swagger-resources", "/webjars/"
+            "/swagger-ui", "/v3/api-docs"
     );
 
     private final UserService userService;
     private final ObjectMapper objectMapper;
 
     // Constructor injection — servlet container instantiates filters before Spring field injection runs.
-    @Autowired
     public AuthenticationFilter(UserService userService) {
         this.userService = userService;
         this.objectMapper = new ObjectMapper();

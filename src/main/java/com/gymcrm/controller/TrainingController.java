@@ -2,10 +2,10 @@ package com.gymcrm.controller;
 
 import com.gymcrm.dto.request.AddTrainingRequest;
 import com.gymcrm.facade.GymFacade;
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
-import io.swagger.annotations.ApiResponse;
-import io.swagger.annotations.ApiResponses;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -17,7 +17,7 @@ import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("/trainings")
-@Api(tags = "Trainings")
+@Tag(name = "Trainings")
 public class TrainingController {
 
     private final GymFacade facade;
@@ -28,12 +28,12 @@ public class TrainingController {
     }
 
     @PostMapping
-    @ApiOperation(value = "Add training", notes = "Requires HTTP Basic auth. Send credentials via Authorization: Basic <base64(username:password)>.")
+        @Operation(summary = "Add training", description = "Requires HTTP Basic auth. Send credentials via Authorization: Basic <base64(username:password)>." )
     @ApiResponses({
-            @ApiResponse(code = 200, message = "OK"),
-            @ApiResponse(code = 400, message = "Validation error"),
-            @ApiResponse(code = 401, message = "Unauthorized — missing or invalid Basic credentials"),
-            @ApiResponse(code = 404, message = "Not found")
+            @ApiResponse(responseCode = "200", description = "OK"),
+            @ApiResponse(responseCode = "400", description = "Validation error"),
+            @ApiResponse(responseCode = "401", description = "Unauthorized — missing or invalid Basic credentials"),
+            @ApiResponse(responseCode = "404", description = "Not found")
     })
     public ResponseEntity<Void> addTraining(@Valid @RequestBody AddTrainingRequest req) {
         facade.addTraining(req);

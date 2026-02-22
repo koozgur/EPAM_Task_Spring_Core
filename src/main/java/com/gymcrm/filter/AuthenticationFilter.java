@@ -28,11 +28,11 @@ import java.util.Set;
 public class AuthenticationFilter extends OncePerRequestFilter {
 
     private static final Set<String> PUBLIC_EXACT_PATHS = Set.of(
-            "/trainees/register", "/trainers/register"
+            "/trainees/register", "/trainers/register", "/swagger-ui.html", "/v3/api-docs", "/v3/api-docs.yaml"
     );
 
     private static final Set<String> PUBLIC_PREFIX_PATHS = Set.of(
-            "/swagger-resources", "/webjars/"
+            "/swagger-ui", "/v3/api-docs", "/swagger-resources", "/webjars/"
     );
 
     private final UserService userService;
@@ -104,7 +104,7 @@ public class AuthenticationFilter extends OncePerRequestFilter {
     }
 
     private boolean isPublicPath(String uri) {
-        if (PUBLIC_EXACT_PATHS.contains(uri) || "/swagger-ui.html".equals(uri) || "/v2/api-docs".equals(uri)) {
+        if (PUBLIC_EXACT_PATHS.contains(uri)) {
             return true;
         }
         return PUBLIC_PREFIX_PATHS.stream().anyMatch(uri::startsWith);

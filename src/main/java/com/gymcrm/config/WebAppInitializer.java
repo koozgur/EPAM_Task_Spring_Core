@@ -28,7 +28,7 @@ public class WebAppInitializer extends AbstractAnnotationConfigDispatcherServlet
     /** Child context: MVC infrastructure, controllers, filters. */
     @Override
     protected Class<?>[] getServletConfigClasses() {
-        return new Class<?>[] { WebMvcConfig.class };
+        return new Class<?>[] { WebMvcConfig.class, SwaggerConfig.class };
     }
 
     /** Route all requests through DispatcherServlet. */

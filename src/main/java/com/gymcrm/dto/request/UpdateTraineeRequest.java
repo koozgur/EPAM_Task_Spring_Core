@@ -1,6 +1,7 @@
 package com.gymcrm.dto.request;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
+import io.swagger.annotations.ApiModelProperty;
 
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
@@ -19,6 +20,7 @@ public class UpdateTraineeRequest {
     @NotBlank
     private String lastName;
 
+    @ApiModelProperty(value = "Date of birth (optional)", example = "1995-06-15")
     @JsonFormat(pattern = "yyyy-MM-dd")
     private LocalDate dateOfBirth;   // optional
 

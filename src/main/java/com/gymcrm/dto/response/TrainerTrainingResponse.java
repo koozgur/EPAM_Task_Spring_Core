@@ -1,6 +1,7 @@
 package com.gymcrm.dto.response;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
+import io.swagger.annotations.ApiModelProperty;
 
 import java.time.LocalDate;
 
@@ -9,6 +10,7 @@ public class TrainerTrainingResponse {
 
     private String trainingName;
 
+    @ApiModelProperty(value = "Training date", example = "2026-02-25")
     @JsonFormat(pattern = "yyyy-MM-dd")
     private LocalDate trainingDate;
 

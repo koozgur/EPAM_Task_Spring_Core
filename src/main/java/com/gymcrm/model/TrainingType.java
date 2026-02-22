@@ -1,9 +1,7 @@
 package com.gymcrm.model;
 
 import javax.persistence.*;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 
 @Entity
 @Table(name = "training_types")
@@ -17,10 +15,10 @@ public class TrainingType {
     private String trainingTypeName;
 
     @OneToMany(mappedBy = "trainingType")
-    private List<Training> trainings = new ArrayList<>();
+    private Set<Training> trainings = new HashSet<>();
 
     @OneToMany(mappedBy = "specialization")
-    private List<Trainer> trainers = new ArrayList<>();
+    private Set<Trainer> trainers = new HashSet<>();
 
     public TrainingType() {
     }
@@ -50,19 +48,19 @@ public class TrainingType {
         this.trainingTypeName = trainingTypeName;
     }
 
-    public List<Training> getTrainings() {
+    public Set<Training> getTrainings() {
         return trainings;
     }
 
-    public void setTrainings(List<Training> trainings) {
+    public void setTrainings(Set<Training> trainings) {
         this.trainings = trainings;
     }
 
-    public List<Trainer> getTrainers() {
+    public Set<Trainer> getTrainers() {
         return trainers;
     }
 
-    public void setTrainers(List<Trainer> trainers) {
+    public void setTrainers(Set<Trainer> trainers) {
         this.trainers = trainers;
     }
 

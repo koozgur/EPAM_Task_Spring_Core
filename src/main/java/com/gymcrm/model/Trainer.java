@@ -1,9 +1,7 @@
 package com.gymcrm.model;
 
 import javax.persistence.*;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 
 @Entity
 @Table(name = "trainers")
@@ -23,10 +21,10 @@ public class Trainer {
     private TrainingType specialization;
 
     @ManyToMany(mappedBy = "trainers")
-    private List<Trainee> trainees = new ArrayList<>();
+    private Set<Trainee> trainees = new HashSet<>();
 
     @OneToMany(mappedBy = "trainer", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<Training> trainings = new ArrayList<>();
+    private Set<Training> trainings = new HashSet<>();
 
     public Trainer() {
     }
@@ -69,19 +67,19 @@ public class Trainer {
         this.specialization = specialization;
     }
 
-    public List<Trainee> getTrainees() {
+    public Set<Trainee> getTrainees() {
         return trainees;
     }
 
-    public void setTrainees(List<Trainee> trainees) {
+    public void setTrainees(Set<Trainee> trainees) {
         this.trainees = trainees;
     }
 
-    public List<Training> getTrainings() {
+    public Set<Training> getTrainings() {
         return trainings;
     }
 
-    public void setTrainings(List<Training> trainings) {
+    public void setTrainings(Set<Training> trainings) {
         this.trainings = trainings;
     }
 

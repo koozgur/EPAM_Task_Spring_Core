@@ -44,13 +44,19 @@ public class TrainerDAOImpl implements TrainerDAO {
         if (id == null) {
             return Optional.empty();
         }
-        return Optional.ofNullable(entityManager.find(Trainer.class, id));
+        return entityManager
+                .createQuery(
+                        "select t from Trainer t left join fetch t.trainees left join fetch t.trainings where t.id = :id",
+                        Trainer.class)
+                .setParameter("id", id)
+                .getResultStream()
+                .findFirst();
     }
     
     @Override
     public List<Trainer> findAll() {
         return entityManager
-                .createQuery("select t from Trainer t", Trainer.class)
+                .createQuery("select distinct t from Trainer t left join fetch t.trainees left join fetch t.trainings", Trainer.class)
                 .getResultList();
     }
     
@@ -61,7 +67,7 @@ public class TrainerDAOImpl implements TrainerDAO {
         }
         return entityManager
                 .createQuery(
-                        "select t from Trainer t join t.user u where u.username = :username",
+                        "select t from Trainer t where t.user.username = :username",
                         Trainer.class)
                 .setParameter("username", username)
                 .getResultStream()
@@ -75,14 +81,32 @@ public class TrainerDAOImpl implements TrainerDAO {
 
         return entityManager
                 .createQuery(
-                        "select tr from Trainer tr " +
-                                "where tr not in (" +
-                                "select t from Trainee tn " +
-                                "join tn.trainers t " +
-                                "join tn.user u " +
-                                "where u.username = :traineeUsername)",
+                        """
+                        select tr
+                        from Trainer tr
+                        where not exists (
+                            select 1
+                            from Trainee tn
+                            join tn.trainers assigned
+                            where tn.user.username = :traineeUsername
+                            and assigned = tr
+                        )
+                        """,
                         Trainer.class)
                 .setParameter("traineeUsername", traineeUsername)
                 .getResultList();
+    }
+
+    @Override
+    public Optional<Trainer> findByUsernameWithTrainees(String username) {
+        return entityManager.createQuery("""
+        select distinct t
+        from Trainer t
+        left join fetch t.trainees tr
+        where t.user.username = :username
+        """, Trainer.class)
+                .setParameter("username", username)
+                .getResultStream()
+                .findFirst();
     }
 }

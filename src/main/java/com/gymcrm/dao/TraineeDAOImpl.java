@@ -56,13 +56,19 @@ public class TraineeDAOImpl implements TraineeDAO {
         if (id == null) {
             return Optional.empty();
         }
-        return Optional.ofNullable(entityManager.find(Trainee.class, id));
+        return entityManager
+                .createQuery(
+                "select t from Trainee t left join fetch t.trainers where t.id = :id",
+                        Trainee.class)
+                .setParameter("id", id)
+                .getResultStream()
+                .findFirst();
     }
 
     @Override
     public List<Trainee> findAll() {
         return entityManager
-                .createQuery("select t from Trainee t", Trainee.class)
+                .createQuery("select distinct t from Trainee t left join fetch t.trainers", Trainee.class)
                 .getResultList();
     }
     
@@ -73,7 +79,7 @@ public class TraineeDAOImpl implements TraineeDAO {
         }
         return entityManager
                 .createQuery(
-                        "select t from Trainee t join t.user u where u.username = :username",
+                "select t from Trainee t where t.user.username = :username",
                         Trainee.class)
                 .setParameter("username", username)
                 .getResultStream()

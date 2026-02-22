@@ -77,7 +77,7 @@ public class TrainerServiceImpl implements TrainerService {
         validateRequiredFields(trainer);
 
         String username = trainer.getUser().getUsername();
-        Trainer existing = trainerDAO.findByUsername(username)
+        Trainer existing = trainerDAO.findByUsernameWithTrainees(username)
             .orElseThrow(() -> new NotFoundException(
                 "Trainer not found with username: " + username));
 

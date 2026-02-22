@@ -44,7 +44,7 @@ public class AuthController {
     }
 
     @PutMapping("/change-password")
-    @ApiOperation(value = "Change password", notes = "Requires HTTP Basic auth. Send credentials via Authorization: Basic <base64(username:password)>.")
+    @ApiOperation(value = "Change password", notes = "Requires HTTP Basic auth. New password length should be at least 8 characters. Send credentials via Authorization: Basic <base64(username:password)>.")
     @ApiResponses({
             @ApiResponse(code = 200, message = "OK"),
             @ApiResponse(code = 400, message = "Validation error"),

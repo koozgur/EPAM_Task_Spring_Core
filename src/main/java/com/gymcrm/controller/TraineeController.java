@@ -137,7 +137,7 @@ public class TraineeController {
             @RequestParam(required = false)
             @ApiParam(value = "Filter to date (yyyy-MM-dd)")
             @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate periodTo,
-            @ApiParam(value = "Trainer name filter, firstName or lastName") @RequestParam(required = false) String trainerName,
+            @ApiParam(value = "Trainer name filter, firstName or lastName of the Trainer") @RequestParam(required = false) String trainerName,
             @ApiParam(value = "Training type filter") @RequestParam(required = false) String trainingType) {
         return ResponseEntity.ok(
                 facade.getTraineeTrainings(username, periodFrom, periodTo, trainerName, trainingType));

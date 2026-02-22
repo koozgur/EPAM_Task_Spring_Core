@@ -3,8 +3,7 @@ package com.gymcrm.dto.request;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import io.swagger.annotations.ApiModelProperty;
 
-import javax.validation.constraints.NotBlank;
-import javax.validation.constraints.Past;
+import jakarta.validation.constraints.NotBlank;
 import java.time.LocalDate;
 
 public class TraineeRegistrationRequest {

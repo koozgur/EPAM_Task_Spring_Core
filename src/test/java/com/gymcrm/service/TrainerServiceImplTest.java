@@ -34,6 +34,9 @@ class TrainerServiceImplTest {
     @Mock
     private CredentialsGenerator credentialsGenerator;
 
+    @Mock
+    private UserService userService;
+
     @InjectMocks
     private TrainerServiceImpl trainerService;
 
@@ -119,7 +122,7 @@ class TrainerServiceImplTest {
         assertNotNull(result);
         assertEquals("Michael", testTrainer.getUser().getFirstName());
         assertFalse(testTrainer.getUser().getIsActive());
-        assertEquals(newType, testTrainer.getSpecialization());
+        assertEquals(testSpecialization, testTrainer.getSpecialization());
         verify(trainerDAO).update(testTrainer);
     }
 
@@ -143,7 +146,7 @@ class TrainerServiceImplTest {
     @Test
     @DisplayName("authenticate: returns true on match")
     void authenticate_success() {
-        when(trainerDAO.findByUsername("Mike.Coach")).thenReturn(Optional.of(testTrainer));
+        when(userService.authenticate("Mike.Coach", "password123")).thenReturn(true);
 
         assertTrue(trainerService.authenticate("Mike.Coach", "password123"));
     }
@@ -151,7 +154,7 @@ class TrainerServiceImplTest {
     @Test
     @DisplayName("authenticate: returns false when user not found")
     void authenticate_userNotFound() {
-        when(trainerDAO.findByUsername("ghost")).thenReturn(Optional.empty());
+        when(userService.authenticate("ghost", "anyPass")).thenReturn(false);
 
         assertFalse(trainerService.authenticate("ghost", "anyPass"));
     }

@@ -2,9 +2,7 @@ package com.gymcrm.model;
 
 import javax.persistence.*;
 import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 
 @Entity
 @Table(name = "trainees")
@@ -31,10 +29,10 @@ public class Trainee {
             joinColumns = @JoinColumn(name = "trainee_id"),
             inverseJoinColumns = @JoinColumn(name = "trainer_id")
     )
-    private List<Trainer> trainers = new ArrayList<>();
+    private Set<Trainer> trainers = new HashSet<>();
 
     @OneToMany(mappedBy = "trainee", cascade = CascadeType.REMOVE, orphanRemoval = true)
-    private List<Training> trainings = new ArrayList<>();
+    private Set<Training> trainings = new HashSet<>();
 
     public Trainee() {
     }
@@ -87,19 +85,19 @@ public class Trainee {
         this.address = address;
     }
 
-    public List<Trainer> getTrainers() {
+    public Set<Trainer> getTrainers() {
         return trainers;
     }
 
-    public void setTrainers(List<Trainer> trainers) {
+    public void setTrainers(Set<Trainer> trainers) {
         this.trainers = trainers;
     }
 
-    public List<Training> getTrainings() {
+    public Set<Training> getTrainings() {
         return trainings;
     }
 
-    public void setTrainings(List<Training> trainings) {
+    public void setTrainings(Set<Training> trainings) {
         this.trainings = trainings;
     }
 

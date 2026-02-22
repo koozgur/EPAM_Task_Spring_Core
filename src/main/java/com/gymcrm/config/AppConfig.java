@@ -21,11 +21,17 @@ import javax.sql.DataSource;
 import java.util.Properties;
 
 /**
- * Main Spring configuration class.
- * Configures JPA with Hibernate as provider for PostgreSQL database.
+ * Root (parent) context — non-web layer and servlet filters.
+ * Filters live here because the servlet container initialises them BEFORE the child
+ * (servlet) context starts; DelegatingFilterProxy can only look up beans in the root context.
  */
 @Configuration
-@ComponentScan(basePackages = "com.gymcrm")
+@ComponentScan(basePackages = {
+        "com.gymcrm.dao",
+        "com.gymcrm.service",
+        "com.gymcrm.util",
+        "com.gymcrm.filter"
+})
 @PropertySource("classpath:application.properties")
 @EnableTransactionManagement
 public class AppConfig {
@@ -54,9 +60,6 @@ public class AppConfig {
     @Value("${hibernate.format_sql}")
     private String formatSql;
 
-    /**
-     * DataSource bean
-     */
     @Bean
     public DataSource dataSource() {
         DriverManagerDataSource ds = new DriverManagerDataSource();
@@ -67,9 +70,6 @@ public class AppConfig {
         return ds;
     }
 
-    /**
-     * EntityManagerFactory configured with Hibernate
-     */
     @Bean
     public LocalContainerEntityManagerFactoryBean entityManagerFactory(DataSource dataSource) {
         LocalContainerEntityManagerFactoryBean emf =
@@ -89,9 +89,6 @@ public class AppConfig {
         return emf;
     }
 
-    /**
-     * Hibernate-specific properties
-     */
     private Properties hibernateProperties() {
         Properties props = new Properties();
         props.put("hibernate.dialect", hibernateDialect);
@@ -101,18 +98,13 @@ public class AppConfig {
         return props;
     }
 
-    /**
-     * Transaction manager (JPA-level)
-     */
     @Bean
     public PlatformTransactionManager transactionManager(
             EntityManagerFactory emf) {
         return new JpaTransactionManager(emf);
     }
 
-    /**
-     * Seed constant TrainingType values from data.sql on startup.
-     */
+    /** Runs data.sql after entityManagerFactory is ready to seed TrainingType rows. */
     @Bean
     @DependsOn("entityManagerFactory")
     public DataSourceInitializer dataSourceInitializer(DataSource dataSource) {

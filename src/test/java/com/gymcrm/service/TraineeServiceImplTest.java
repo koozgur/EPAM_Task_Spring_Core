@@ -41,6 +41,9 @@ class TraineeServiceImplTest {
     @Mock
     private CredentialsGenerator credentialsGenerator;
 
+    @Mock
+    private UserService userService;
+
     @InjectMocks
     private TraineeServiceImpl traineeService;
 
@@ -192,7 +195,7 @@ class TraineeServiceImplTest {
     @Test
     @DisplayName("authenticate: returns true on match")
     void authenticate_success() {
-        when(traineeDAO.findByUsername("John.Doe")).thenReturn(Optional.of(testTrainee));
+        when(userService.authenticate("John.Doe", "password123")).thenReturn(true);
 
         assertTrue(traineeService.authenticate("John.Doe", "password123"));
     }
@@ -200,7 +203,7 @@ class TraineeServiceImplTest {
     @Test
     @DisplayName("authenticate: returns false when user not found")
     void authenticate_userNotFound() {
-        when(traineeDAO.findByUsername("ghost")).thenReturn(Optional.empty());
+        when(userService.authenticate("ghost", "anyPass")).thenReturn(false);
 
         assertFalse(traineeService.authenticate("ghost", "anyPass"));
     }

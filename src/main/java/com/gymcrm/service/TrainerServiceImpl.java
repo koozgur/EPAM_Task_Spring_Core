@@ -24,6 +24,7 @@ public class TrainerServiceImpl implements TrainerService {
 
     private TrainerDAO trainerDAO;
     private CredentialsGenerator credentialsGenerator;
+    private UserService userService;
 
     @Autowired
     public void setTrainerDAO(TrainerDAO trainerDAO) {
@@ -33,6 +34,11 @@ public class TrainerServiceImpl implements TrainerService {
     @Autowired
     public void setCredentialsGenerator(CredentialsGenerator credentialsGenerator) {
         this.credentialsGenerator = credentialsGenerator;
+    }
+
+    @Autowired
+    public void setUserService(UserService userService) {
+        this.userService = userService;
     }
 
     @Override
@@ -47,30 +53,13 @@ public class TrainerServiceImpl implements TrainerService {
         user.setPassword(password);
         user.setIsActive(true);
 
-        Trainer created = trainerDAO.create(trainer);
-        logger.info("Created trainer profile with username: {}", username);
-        return created;
+        return trainerDAO.create(trainer);
     }
 
     @Override
     @Transactional(readOnly = true)
     public boolean authenticate(String username, String password) {
-        if (username == null || password == null) {
-            logger.warn("Authentication attempt with null credentials");
-            return false;
-        }
-
-        Optional<Trainer> trainerOpt = trainerDAO.findByUsername(username);
-        if (trainerOpt.isEmpty()) {
-            logger.warn("Authentication failed: trainer not found for username: {}", username);
-            return false;
-        }
-
-        boolean matches = password.equals(trainerOpt.get().getUser().getPassword());
-        if (!matches) {
-            logger.warn("Authentication failed: password mismatch for username: {}", username);
-        }
-        return matches;
+        return userService.authenticate(username, password);
     }
 
     @Override
@@ -79,9 +68,7 @@ public class TrainerServiceImpl implements TrainerService {
         if (username == null) {
             throw new ValidationException("Username must not be null");
         }
-        Optional<Trainer> result = trainerDAO.findByUsername(username);
-        logger.info("Selected trainer by username: {}, found: {}", username, result.isPresent());
-        return result;
+        return trainerDAO.findByUsername(username);
     }
 
     @Override
@@ -90,7 +77,7 @@ public class TrainerServiceImpl implements TrainerService {
         validateRequiredFields(trainer);
 
         String username = trainer.getUser().getUsername();
-        Trainer existing = trainerDAO.findByUsername(username)
+        Trainer existing = trainerDAO.findByUsernameWithTrainees(username)
             .orElseThrow(() -> new NotFoundException(
                 "Trainer not found with username: " + username));
 
@@ -99,11 +86,10 @@ public class TrainerServiceImpl implements TrainerService {
         existingUser.setFirstName(trainer.getUser().getFirstName());
         existingUser.setLastName(trainer.getUser().getLastName());
         existingUser.setIsActive(trainer.getUser().getIsActive());
-        existing.setSpecialization(trainer.getSpecialization());
+        // specialization is read-only per spec — intentionally not updated here
+        logger.warn("Specialization (Training Type) is read-only, cannot update it");
 
-        Trainer updated = trainerDAO.update(existing);
-        logger.info("Updated trainer profile for username: {}", username);
-        return updated;
+        return trainerDAO.update(existing);
     }
 
     @Override
@@ -124,7 +110,6 @@ public class TrainerServiceImpl implements TrainerService {
 
         trainer.getUser().setPassword(newPassword);
         trainerDAO.update(trainer);
-        logger.info("Password changed for trainer: {}", username);
     }
 
     @Override
@@ -144,7 +129,6 @@ public class TrainerServiceImpl implements TrainerService {
 
         trainer.getUser().setIsActive(true);
         trainerDAO.update(trainer);
-        logger.info("Activated trainer: {}", username);
     }
 
     @Override
@@ -164,7 +148,6 @@ public class TrainerServiceImpl implements TrainerService {
 
         trainer.getUser().setIsActive(false);
         trainerDAO.update(trainer);
-        logger.info("Deactivated trainer: {}", username);
     }
 
     @Override

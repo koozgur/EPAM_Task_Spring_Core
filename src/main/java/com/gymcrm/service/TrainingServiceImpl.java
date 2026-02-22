@@ -5,6 +5,7 @@ import com.gymcrm.dao.TrainerDAO;
 import com.gymcrm.dao.TrainingDAO;
 import com.gymcrm.dao.TrainingTypeDAO;
 import com.gymcrm.exception.NotFoundException;
+import com.gymcrm.exception.StateConflictException;
 import com.gymcrm.exception.ValidationException;
 import com.gymcrm.model.Trainee;
 import com.gymcrm.model.Trainer;
@@ -51,7 +52,7 @@ public class TrainingServiceImpl implements TrainingService {
     }
 
     @Override
-        @Transactional
+    @Transactional
     public Training createTraining(Training training) {
         validateRequiredFields(training);
 
@@ -65,6 +66,11 @@ public class TrainingServiceImpl implements TrainingService {
         Trainer trainer = trainerDAO.findByUsername(trainerUsername)
             .orElseThrow(() -> new NotFoundException(
                 "Trainer not found with username: " + trainerUsername));
+
+        if (!trainee.getTrainers().contains(trainer)) {
+            throw new StateConflictException(
+                    String.format("Trainer %s is not assigned to trainee: %s , cannot add training", trainerUsername, traineeUsername));
+        }
 
         TrainingType trainingType = resolveTrainingType(training.getTrainingType());
 

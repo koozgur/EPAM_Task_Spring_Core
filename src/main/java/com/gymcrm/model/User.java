@@ -55,6 +55,13 @@ public class User {
         this.isActive = isActive;
     }
 
+    public User(String firstName, String lastName, String username, Boolean isActive ){
+        this.firstName = firstName;
+        this.lastName = lastName;
+        this.username = username;
+        this.isActive = isActive;
+    }
+
     public Long getId() {
         return id;
     }

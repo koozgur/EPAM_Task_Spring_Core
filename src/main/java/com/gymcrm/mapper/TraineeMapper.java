@@ -10,7 +10,7 @@ import org.mapstruct.Mapping;
 /**
  * Uses TrainerMapper to convert the nested List<Trainer> trainers collection.
  */
-@Mapper(componentModel = "spring", uses = {TrainerMapper.class})
+@Mapper(componentModel = "spring", uses = {TrainerSummaryMapper.class})
 public interface TraineeMapper {
 
     @Mapping(source = "user.username", target = "username")

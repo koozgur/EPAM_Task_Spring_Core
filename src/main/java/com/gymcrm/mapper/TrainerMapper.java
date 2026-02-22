@@ -11,7 +11,7 @@ import org.mapstruct.Mapping;
  * Uses TrainingTypeMapper to convert TrainingType → TrainingTypeResponse (specialization field).
  * Uses TraineeMapper to convert the nested List<Trainee> trainees collection.
  */
-@Mapper(componentModel = "spring", uses = {TrainingTypeMapper.class, TraineeMapper.class})
+@Mapper(componentModel = "spring", uses = {TrainingTypeMapper.class, TraineeSummaryMapper.class})
 public interface TrainerMapper {
 
     @Mapping(source = "user.username", target = "username")

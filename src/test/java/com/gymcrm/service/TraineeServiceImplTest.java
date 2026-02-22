@@ -19,9 +19,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
@@ -297,7 +295,7 @@ class TraineeServiceImplTest {
         trainer2.setId(11L);
         trainer2.setUser(trainerUser2);
 
-        testTrainee.setTrainers(new ArrayList<>(List.of(trainer1)));
+        testTrainee.setTrainers(new HashSet<>(Set.of(trainer1)));
 
         when(traineeDAO.findByUsername("John.Doe")).thenReturn(Optional.of(testTrainee));
         when(trainerDAO.findByUsername("Trainer.One")).thenReturn(Optional.of(trainer1));

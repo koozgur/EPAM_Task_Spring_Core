@@ -72,6 +72,7 @@ class TrainingServiceImplTest {
 
         testTrainingType = new TrainingType("Cardio");
         testTrainingType.setId(5L);
+        testTrainee.getTrainers().add(testTrainer);
     }
 
     @Test

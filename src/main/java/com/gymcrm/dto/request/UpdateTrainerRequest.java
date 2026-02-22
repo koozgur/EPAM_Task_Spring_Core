@@ -15,7 +15,6 @@ public class UpdateTrainerRequest {
     @NotBlank
     private String lastName;
 
-    //TODO: Specialization is read-only — log warning will be added
     @NotNull
     private Boolean isActive;
 

@@ -5,7 +5,6 @@ import io.swagger.annotations.ApiModelProperty;
 
 import java.time.LocalDate;
 
-//TODO: response item for 13th task spec
 public class TrainerTrainingResponse {
 
     private String trainingName;

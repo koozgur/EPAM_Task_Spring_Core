@@ -86,7 +86,8 @@ public class TrainerServiceImpl implements TrainerService {
         existingUser.setFirstName(trainer.getUser().getFirstName());
         existingUser.setLastName(trainer.getUser().getLastName());
         existingUser.setIsActive(trainer.getUser().getIsActive());
-        // specialization is read-only per spec (task note 9) — intentionally not updated here
+        // specialization is read-only per spec — intentionally not updated here
+        logger.warn("Specialization (Training Type) is read-only, cannot update it");
 
         return trainerDAO.update(existing);
     }

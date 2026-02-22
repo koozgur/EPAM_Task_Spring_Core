@@ -4,6 +4,7 @@ import com.gymcrm.filter.AuthenticationFilter;
 import com.gymcrm.filter.RestLoggingFilter;
 import com.gymcrm.filter.TransactionLoggingFilter;
 import com.gymcrm.service.UserService;
+import io.micrometer.core.instrument.MeterRegistry;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -22,8 +23,8 @@ public class FilterConfig {
     }
 
     @Bean
-    public AuthenticationFilter authenticationFilter(UserService userService) {
-        return new AuthenticationFilter(userService);
+    public AuthenticationFilter authenticationFilter(UserService userService, MeterRegistry meterRegistry) {
+        return new AuthenticationFilter(userService, meterRegistry);
     }
 
     @Bean

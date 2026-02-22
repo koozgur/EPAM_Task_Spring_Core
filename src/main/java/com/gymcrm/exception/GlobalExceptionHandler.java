@@ -1,6 +1,7 @@
 package com.gymcrm.exception;
 
 import com.gymcrm.dto.response.ErrorResponse;
+import io.micrometer.core.instrument.MeterRegistry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
@@ -11,6 +12,7 @@ import org.springframework.validation.FieldError;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 import jakarta.servlet.http.HttpServletRequest;
@@ -27,6 +29,9 @@ public class GlobalExceptionHandler {
 
     private static final Logger logger =
             LoggerFactory.getLogger(GlobalExceptionHandler.class);
+
+    @Autowired
+    private MeterRegistry meterRegistry;
 
     // 400 — Bean validation errors (@Valid)
     @ExceptionHandler(MethodArgumentNotValidException.class)
@@ -170,6 +175,8 @@ public class GlobalExceptionHandler {
             String message,
             HttpServletRequest request,
             Map<String, String> fieldErrors) {
+
+        meterRegistry.counter("gymcrm.errors.total", "status", String.valueOf(status.value())).increment();
 
         ErrorResponse body = new ErrorResponse(
                 status.value(),

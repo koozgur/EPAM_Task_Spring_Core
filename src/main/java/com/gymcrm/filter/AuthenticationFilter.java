@@ -5,6 +5,8 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.gymcrm.dto.response.ErrorResponse;
 import com.gymcrm.service.UserService;
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.MeterRegistry;
 import org.slf4j.MDC;
 import org.springframework.web.filter.OncePerRequestFilter;
 
@@ -25,7 +27,7 @@ import java.util.Set;
 public class AuthenticationFilter extends OncePerRequestFilter {
 
     private static final Set<String> PUBLIC_EXACT_PATHS = Set.of(
-            "/trainees/register", "/trainers/register", "/v3/api-docs", "/v3/api-docs.yaml"
+            "/trainees/register", "/trainers/register", "/v3/api-docs", "/v3/api-docs.yaml", "/actuator/health", "/actuator/info", "/actuator/prometheus"
     );
 
     private static final Set<String> PUBLIC_PREFIX_PATHS = Set.of(
@@ -34,13 +36,17 @@ public class AuthenticationFilter extends OncePerRequestFilter {
 
     private final UserService userService;
     private final ObjectMapper objectMapper;
+    private final Counter authRequestsCounter;
+    private final Counter authFailuresCounter;
 
     // Constructor injection — servlet container instantiates filters before Spring field injection runs.
-    public AuthenticationFilter(UserService userService) {
+    public AuthenticationFilter(UserService userService, MeterRegistry meterRegistry) {
         this.userService = userService;
         this.objectMapper = new ObjectMapper();
         this.objectMapper.registerModule(new JavaTimeModule());
         this.objectMapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+        this.authRequestsCounter = meterRegistry.counter("gymcrm.auth.requests.total");
+        this.authFailuresCounter = meterRegistry.counter("gymcrm.auth.failures.total");
     }
 
     @Override
@@ -53,8 +59,11 @@ public class AuthenticationFilter extends OncePerRequestFilter {
             return;
         }
 
+        authRequestsCounter.increment();
+
         String header = request.getHeader("Authorization");
         if (header == null || !header.startsWith("Basic ")) {
+            authFailuresCounter.increment();
             sendJsonError(response, request, "Missing credentials");
             return;
         }
@@ -92,6 +101,7 @@ public class AuthenticationFilter extends OncePerRequestFilter {
         }
 
         if (!userService.authenticate(username, password)) {
+            authFailuresCounter.increment();
             sendJsonError(response, request, "Invalid credentials");
             return;
         }

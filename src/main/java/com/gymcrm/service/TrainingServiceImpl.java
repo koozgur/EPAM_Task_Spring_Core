@@ -11,6 +11,8 @@ import com.gymcrm.model.Trainee;
 import com.gymcrm.model.Trainer;
 import com.gymcrm.model.Training;
 import com.gymcrm.model.TrainingType;
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.MeterRegistry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -30,6 +32,12 @@ public class TrainingServiceImpl implements TrainingService {
     private TraineeDAO traineeDAO;
     private TrainerDAO trainerDAO;
     private TrainingTypeDAO trainingTypeDAO;
+    private Counter trainingCreatedCounter;
+
+    @Autowired
+    public void setMeterRegistry(MeterRegistry meterRegistry) {
+        this.trainingCreatedCounter = meterRegistry.counter("gymcrm.training.created.total");
+    }
 
     @Autowired
     public void setTrainingDAO(TrainingDAO trainingDAO) {
@@ -79,6 +87,7 @@ public class TrainingServiceImpl implements TrainingService {
         training.setTrainingType(trainingType);
 
         Training created = trainingDAO.create(training);
+        trainingCreatedCounter.increment();
         logger.info("Created training for trainee: {}, trainer: {}",
             traineeUsername, trainerUsername);
         return created;

@@ -38,15 +38,31 @@ public class WebAppInitializer extends AbstractAnnotationConfigDispatcherServlet
     }
 
     /**
-     * Register filters via DelegatingFilterProxy so Spring resolves @Component beans
-     * (with injected dependencies) from the servlet context at first request.
-     * Order: transactionLoggingFilter → authenticationFilter → restLoggingFilter (Phase 8)
+     * Filter chain order, log all requests including auth failures:
+     *   1. transactionLoggingFilter — sets MDC transactionId first
+     *   2. restLoggingFilter        — wraps auth; captures 401s that auth short-circuits
+     *   3. authenticationFilter     — innermost; sends 401 without calling chain on failure
      */
     @Override
     public void onStartup(ServletContext servletContext) throws ServletException {
         super.onStartup(servletContext);
 
-        //TODO: register transactionLoggingFilter here BEFORE authenticationFilter
+        FilterRegistration.Dynamic txFilter = servletContext.addFilter(
+                "transactionLoggingFilter",
+                new DelegatingFilterProxy("transactionLoggingFilter")
+        );
+        txFilter.addMappingForUrlPatterns(
+                EnumSet.of(DispatcherType.REQUEST), false, "/*"
+        );
+
+        // Must be before authFilter — auth short-circuits on 401 without calling chain.doFilter().
+        FilterRegistration.Dynamic restFilter = servletContext.addFilter(
+                "restLoggingFilter",
+                new DelegatingFilterProxy("restLoggingFilter")
+        );
+        restFilter.addMappingForUrlPatterns(
+                EnumSet.of(DispatcherType.REQUEST), false, "/*"
+        );
 
         FilterRegistration.Dynamic authFilter = servletContext.addFilter(
                 "authenticationFilter",
@@ -55,7 +71,5 @@ public class WebAppInitializer extends AbstractAnnotationConfigDispatcherServlet
         authFilter.addMappingForUrlPatterns(
                 EnumSet.of(DispatcherType.REQUEST), false, "/*"
         );
-
-        //TODO: register restLoggingFilter here AFTER authenticationFilter
     }
 }

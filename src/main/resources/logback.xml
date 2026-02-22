@@ -2,7 +2,12 @@
 <configuration>
     <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
         <encoder>
-            <pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
+            <!--
+                %X{transactionId} reads from MDC — populated by TransactionLoggingFilter.
+                Displays empty string when no transactionId is present (e.g. startup logs).
+                ISO8601 produces "2026-02-21 13:45:00,123" — sortable and unambiguous.
+            -->
+            <pattern>%d{ISO8601} [%thread] %-5level %logger{36} [txId=%X{transactionId}] - %msg%n</pattern>
         </encoder>
     </appender>
 

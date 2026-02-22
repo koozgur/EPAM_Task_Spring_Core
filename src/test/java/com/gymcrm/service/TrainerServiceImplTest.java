@@ -114,7 +114,7 @@ class TrainerServiceImplTest {
         incoming.setUser(updatedUser);
         incoming.setSpecialization(newType);
 
-        when(trainerDAO.findByUsername("Mike.Coach")).thenReturn(Optional.of(testTrainer));
+        when(trainerDAO.findByUsernameWithTrainees("Mike.Coach")).thenReturn(Optional.of(testTrainer));
         when(trainerDAO.update(testTrainer)).thenReturn(testTrainer);
 
         Trainer result = trainerService.updateTrainer(incoming);
@@ -136,7 +136,7 @@ class TrainerServiceImplTest {
         Trainer incoming = new Trainer();
         incoming.setUser(user);
 
-        when(trainerDAO.findByUsername("nonexistent")).thenReturn(Optional.empty());
+        when(trainerDAO.findByUsernameWithTrainees("nonexistent")).thenReturn(Optional.empty());
 
         assertThrows(NotFoundException.class,
                 () -> trainerService.updateTrainer(incoming));

@@ -11,6 +11,8 @@ import com.gymcrm.model.Trainer;
 import com.gymcrm.model.Training;
 import com.gymcrm.model.TrainingType;
 import com.gymcrm.model.User;
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.MeterRegistry;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -20,11 +22,14 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.LocalDate;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -42,6 +47,12 @@ class TrainingServiceImplTest {
 
     @Mock
     private TrainingTypeDAO trainingTypeDAO;
+
+    @Mock
+    private MeterRegistry meterRegistry;
+
+    @Mock
+    private Counter trainingCreatedCounter;
 
     @InjectMocks
     private TrainingServiceImpl trainingService;
@@ -72,11 +83,20 @@ class TrainingServiceImplTest {
 
         testTrainingType = new TrainingType("Cardio");
         testTrainingType.setId(5L);
+
+        // Trainer must be in trainee's assigned trainers set or createTraining throws StateConflictException.
+        testTrainee.setTrainers(new HashSet<>(Set.of(testTrainer)));
+
+        // MeterRegistry is called during setMeterRegistry; stub it then re-inject
+        // so trainingCreatedCounter is never null during tests.
+        when(meterRegistry.counter(anyString())).thenReturn(trainingCreatedCounter);
+        trainingService.setMeterRegistry(meterRegistry);
     }
 
     @Test
     @DisplayName("createTraining: resolves trainee, trainer, and type by id")
     void createTraining_success() {
+
         Training training = new Training();
         training.setTrainee(testTrainee);
         training.setTrainer(testTrainer);

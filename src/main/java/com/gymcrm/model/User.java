@@ -22,8 +22,16 @@ public class User {
     @Column(name = "username", nullable = false, unique = true, length = 100)
     private String username;
 
-    @Column(name = "password", nullable = false, length = 100)
+    @Column(name = "password", nullable = false, length = 255)
     private String password;
+
+    /**
+     * Transient — holds the raw plaintext password immediately after generation.
+     * Never persisted; used only to propagate the value back to the registration response.
+     * Cleared / null in all other lifecycle states.
+     */
+    @Transient
+    private String rawPassword;
 
     @Column(name = "is_active", nullable = false)
     private Boolean isActive;
@@ -84,6 +92,14 @@ public class User {
 
     public void setPassword(String password) {
         this.password = password;
+    }
+
+    public String getRawPassword() {
+        return rawPassword;
+    }
+
+    public void setRawPassword(String rawPassword) {
+        this.rawPassword = rawPassword;
     }
 
     public Boolean getIsActive() {

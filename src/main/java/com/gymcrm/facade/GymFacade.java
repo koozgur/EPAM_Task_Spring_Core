@@ -90,7 +90,7 @@ public class GymFacade {
         Trainee created = traineeService.createTrainee(trainee);
         return new RegistrationResponse(
                 created.getUser().getUsername(),
-                created.getUser().getPassword());
+                created.getUser().getRawPassword());
     }
 
     @Transactional
@@ -108,7 +108,7 @@ public class GymFacade {
         Trainer created = trainerService.createTrainer(trainer);
         return new RegistrationResponse(
                 created.getUser().getUsername(),
-                created.getUser().getPassword());
+                created.getUser().getRawPassword());
     }
 
     @Transactional

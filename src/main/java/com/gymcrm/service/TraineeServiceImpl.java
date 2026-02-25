@@ -13,6 +13,7 @@ import com.gymcrm.util.CredentialsGenerator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -50,6 +51,13 @@ public class TraineeServiceImpl implements TraineeService {
         this.userService = userService;
     }
 
+    @Autowired
+    public void setPasswordEncoder(PasswordEncoder passwordEncoder) {
+        this.passwordEncoder = passwordEncoder;
+    }
+
+    private PasswordEncoder passwordEncoder;
+
     @Override
     @Transactional
     public Trainee createTrainee(Trainee trainee) {
@@ -57,9 +65,10 @@ public class TraineeServiceImpl implements TraineeService {
 
         User user = trainee.getUser();
         String username = credentialsGenerator.generateUsername(user.getFirstName(), user.getLastName());
-        String password = credentialsGenerator.generatePassword();
+        String rawPassword = credentialsGenerator.generatePassword();
         user.setUsername(username);
-        user.setPassword(password);
+        user.setPassword(passwordEncoder.encode(rawPassword));
+        user.setRawPassword(rawPassword);  // transient — returned to caller for RegistrationResponse
         user.setIsActive(true);
 
         return traineeDAO.create(trainee);
@@ -138,11 +147,11 @@ public class TraineeServiceImpl implements TraineeService {
             .orElseThrow(() -> new NotFoundException(
                 "Trainee not found with username: " + username));
 
-        if (!oldPassword.equals(trainee.getUser().getPassword())) {
+        if (!passwordEncoder.matches(oldPassword, trainee.getUser().getPassword())) {
             throw new AuthenticationException("Old password does not match");
         }
 
-        trainee.getUser().setPassword(newPassword);
+        trainee.getUser().setPassword(passwordEncoder.encode(newPassword));
         traineeDAO.update(trainee);
     }
 

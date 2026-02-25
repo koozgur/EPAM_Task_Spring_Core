@@ -11,6 +11,7 @@ import com.gymcrm.util.CredentialsGenerator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -41,6 +42,13 @@ public class TrainerServiceImpl implements TrainerService {
         this.userService = userService;
     }
 
+    @Autowired
+    public void setPasswordEncoder(PasswordEncoder passwordEncoder) {
+        this.passwordEncoder = passwordEncoder;
+    }
+
+    private PasswordEncoder passwordEncoder;
+
     @Override
     @Transactional
     public Trainer createTrainer(Trainer trainer) {
@@ -48,9 +56,10 @@ public class TrainerServiceImpl implements TrainerService {
 
         User user = trainer.getUser();
         String username = credentialsGenerator.generateUsername(user.getFirstName(), user.getLastName());
-        String password = credentialsGenerator.generatePassword();
+        String rawPassword = credentialsGenerator.generatePassword();
         user.setUsername(username);
-        user.setPassword(password);
+        user.setPassword(passwordEncoder.encode(rawPassword));
+        user.setRawPassword(rawPassword);  // transient — returned to caller for RegistrationResponse
         user.setIsActive(true);
 
         return trainerDAO.create(trainer);
@@ -104,11 +113,11 @@ public class TrainerServiceImpl implements TrainerService {
             .orElseThrow(() -> new NotFoundException(
                 "Trainer not found with username: " + username));
 
-        if (!oldPassword.equals(trainer.getUser().getPassword())) {
+        if (!passwordEncoder.matches(oldPassword, trainer.getUser().getPassword())) {
             throw new AuthenticationException("Old password does not match");
         }
 
-        trainer.getUser().setPassword(newPassword);
+        trainer.getUser().setPassword(passwordEncoder.encode(newPassword));
         trainerDAO.update(trainer);
     }
 

@@ -9,6 +9,7 @@ import com.gymcrm.mapper.TrainerMapper;
 import com.gymcrm.mapper.TrainingMapper;
 import com.gymcrm.mapper.TrainingTypeMapper;
 import com.gymcrm.model.*;
+import com.gymcrm.security.JwtTokenProvider;
 import com.gymcrm.service.TraineeService;
 import com.gymcrm.service.TrainerService;
 import com.gymcrm.service.TrainingService;
@@ -43,6 +44,7 @@ class GymFacadeTest {
     @Mock TrainerMapper trainerMapper;
     @Mock TrainingMapper trainingMapper;
     @Mock TrainingTypeMapper trainingTypeMapper;
+    @Mock JwtTokenProvider jwtTokenProvider;
 
     @InjectMocks
     GymFacade facade;
@@ -50,9 +52,11 @@ class GymFacadeTest {
     @Test
     @DisplayName("registerTrainee returns username and password from created entity")
     void registerTrainee_happyPath_returnsCredentials() {
-        User user = new User("John", "Doe", "john.doe1", "pass123456", true);
+        User user = new User("John", "Doe", "john.doe1", "$2a$10$hashedPassword", true);
+        user.setRawPassword("pass123456");
         Trainee created = new Trainee(user, LocalDate.of(1990, 1, 1), "123 Street");
         when(traineeService.createTrainee(any())).thenReturn(created);
+        when(jwtTokenProvider.generateToken("john.doe1")).thenReturn("mock-jwt-token");
 
         TraineeRegistrationRequest req = new TraineeRegistrationRequest();
         req.setFirstName("John");
@@ -70,10 +74,12 @@ class GymFacadeTest {
     @DisplayName("registerTrainer resolves specialization from DB and returns credentials")
     void registerTrainer_happyPath_returnsCredentials() {
         TrainingType yoga = new TrainingType(1L, "Yoga");
-        User user = new User("Jane", "Smith", "jane.smith1", "pass987654", true);
+        User user = new User("Jane", "Smith", "jane.smith1", "$2a$10$hashedPassword", true);
+        user.setRawPassword("pass987654");
         Trainer created = new Trainer(user, yoga);
         when(trainingTypeDAO.findById(1L)).thenReturn(Optional.of(yoga));
         when(trainerService.createTrainer(any())).thenReturn(created);
+        when(jwtTokenProvider.generateToken("jane.smith1")).thenReturn("mock-jwt-token");
 
         TrainerRegistrationRequest req = new TrainerRegistrationRequest();
         req.setFirstName("Jane");

@@ -16,10 +16,11 @@ public class OpenApiConfig {
                 .info(new Info()
                         .title("Gym CRM REST API")
                         .description("REST endpoints for trainee, trainer and training management.")
-                        .version("1.0"))
-                .addSecurityItem(new SecurityRequirement().addList("basicAuth"))
-                .schemaRequirement("basicAuth", new SecurityScheme()
+                        .version("2.0"))
+                .addSecurityItem(new SecurityRequirement().addList("bearerAuth"))
+                .schemaRequirement("bearerAuth", new SecurityScheme()
                         .type(SecurityScheme.Type.HTTP)
-                        .scheme("basic"));
+                        .scheme("bearer")
+                        .bearerFormat("JWT"));
     }
 }

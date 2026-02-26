@@ -35,9 +35,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private final JwtTokenProvider jwtTokenProvider;
     private final UserDetailsService userDetailsService;
 
-    /**
-     * Optional — Phase 6 adds this bean; null-safe check below prevents NPE before that.
-     */
     @Autowired(required = false)
     private TokenBlacklistService tokenBlacklistService;
 
@@ -58,7 +55,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         if (token != null && jwtTokenProvider.validateToken(token)) {
 
-            // Phase 6: check token blacklist (TokenBlacklistService injected when available)
+            // check token blacklist (TokenBlacklistService injected when available)
             if (tokenBlacklistService != null) {
                 String jti = jwtTokenProvider.getJtiFromToken(token);
                 if (tokenBlacklistService.isBlacklisted(jti)) {

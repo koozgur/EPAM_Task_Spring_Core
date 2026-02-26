@@ -1,14 +1,14 @@
 package com.gymcrm.config;
 
-import com.gymcrm.filter.AuthenticationFilter;
 import com.gymcrm.filter.RestLoggingFilter;
 import com.gymcrm.filter.TransactionLoggingFilter;
-import com.gymcrm.service.UserService;
-import io.micrometer.core.instrument.MeterRegistry;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
+/**
+ * Registers servlet filters that run alongside the Spring Security filter chain.
+ */
 @Configuration
 public class FilterConfig {
 
@@ -20,11 +20,6 @@ public class FilterConfig {
     @Bean
     public RestLoggingFilter restLoggingFilter() {
         return new RestLoggingFilter();
-    }
-
-    @Bean
-    public AuthenticationFilter authenticationFilter(UserService userService, MeterRegistry meterRegistry) {
-        return new AuthenticationFilter(userService, meterRegistry);
     }
 
     @Bean
@@ -43,15 +38,6 @@ public class FilterConfig {
         registration.setFilter(filter);
         registration.addUrlPatterns("/*");
         registration.setOrder(2);
-        return registration;
-    }
-
-    @Bean
-    public FilterRegistrationBean<AuthenticationFilter> authenticationFilterRegistration(AuthenticationFilter filter) {
-        FilterRegistrationBean<AuthenticationFilter> registration = new FilterRegistrationBean<>();
-        registration.setFilter(filter);
-        registration.addUrlPatterns("/*");
-        registration.setOrder(3);
         return registration;
     }
 }

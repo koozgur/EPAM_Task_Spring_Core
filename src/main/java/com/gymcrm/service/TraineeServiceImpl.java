@@ -2,7 +2,6 @@ package com.gymcrm.service;
 
 import com.gymcrm.dao.TraineeDAO;
 import com.gymcrm.dao.TrainerDAO;
-import com.gymcrm.exception.AuthenticationException;
 import com.gymcrm.exception.NotFoundException;
 import com.gymcrm.exception.StateConflictException;
 import com.gymcrm.exception.ValidationException;
@@ -122,37 +121,11 @@ public class TraineeServiceImpl implements TraineeService {
 
     @Override
     @Transactional(readOnly = true)
-    public boolean authenticate(String username, String password) {
-        return userService.authenticate(username, password);
-    }
-
-    @Override
-    @Transactional(readOnly = true)
     public Optional<Trainee> getTraineeByUsername(String username) {
         if (username == null) {
             throw new ValidationException("Username must not be null");
         }
         return traineeDAO.findByUsername(username);
-    }
-
-    @Override
-    @Transactional
-    public void changePassword(String username, String oldPassword, String newPassword) {
-        if (username == null || oldPassword == null || newPassword == null) {
-            throw new ValidationException(
-                "Username, old password, and new password must not be null");
-        }
-
-        Trainee trainee = traineeDAO.findByUsername(username)
-            .orElseThrow(() -> new NotFoundException(
-                "Trainee not found with username: " + username));
-
-        if (!passwordEncoder.matches(oldPassword, trainee.getUser().getPassword())) {
-            throw new AuthenticationException("Old password does not match");
-        }
-
-        trainee.getUser().setPassword(passwordEncoder.encode(newPassword));
-        traineeDAO.update(trainee);
     }
 
     @Override

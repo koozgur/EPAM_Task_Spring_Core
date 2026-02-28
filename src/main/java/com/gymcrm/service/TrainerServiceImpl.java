@@ -1,7 +1,6 @@
 package com.gymcrm.service;
 
 import com.gymcrm.dao.TrainerDAO;
-import com.gymcrm.exception.AuthenticationException;
 import com.gymcrm.exception.NotFoundException;
 import com.gymcrm.exception.StateConflictException;
 import com.gymcrm.exception.ValidationException;
@@ -67,12 +66,6 @@ public class TrainerServiceImpl implements TrainerService {
 
     @Override
     @Transactional(readOnly = true)
-    public boolean authenticate(String username, String password) {
-        return userService.authenticate(username, password);
-    }
-
-    @Override
-    @Transactional(readOnly = true)
     public Optional<Trainer> getTrainerByUsername(String username) {
         if (username == null) {
             throw new ValidationException("Username must not be null");
@@ -99,26 +92,6 @@ public class TrainerServiceImpl implements TrainerService {
         logger.warn("Specialization (Training Type) is read-only, cannot update it");
 
         return trainerDAO.update(existing);
-    }
-
-    @Override
-    @Transactional
-    public void changePassword(String username, String oldPassword, String newPassword) {
-        if (username == null || oldPassword == null || newPassword == null) {
-            throw new ValidationException(
-                "Username, old password, and new password must not be null");
-        }
-
-        Trainer trainer = trainerDAO.findByUsername(username)
-            .orElseThrow(() -> new NotFoundException(
-                "Trainer not found with username: " + username));
-
-        if (!passwordEncoder.matches(oldPassword, trainer.getUser().getPassword())) {
-            throw new AuthenticationException("Old password does not match");
-        }
-
-        trainer.getUser().setPassword(passwordEncoder.encode(newPassword));
-        trainerDAO.update(trainer);
     }
 
     @Override

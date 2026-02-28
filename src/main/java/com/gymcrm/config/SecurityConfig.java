@@ -2,6 +2,8 @@ package com.gymcrm.config;
 
 import com.gymcrm.security.JwtAuthenticationEntryPoint;
 import com.gymcrm.security.JwtAuthenticationFilter;
+import com.gymcrm.security.JwtLogoutHandler;
+import com.gymcrm.security.JwtLogoutSuccessHandler;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -45,13 +47,19 @@ public class SecurityConfig {
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
     private final JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint;
     private final UserDetailsService userDetailsService;
+    private final JwtLogoutHandler jwtLogoutHandler;
+    private final JwtLogoutSuccessHandler jwtLogoutSuccessHandler;
 
     public SecurityConfig(JwtAuthenticationFilter jwtAuthenticationFilter,
                           JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint,
-                          UserDetailsService userDetailsService) {
+                          UserDetailsService userDetailsService,
+                          JwtLogoutHandler jwtLogoutHandler,
+                          JwtLogoutSuccessHandler jwtLogoutSuccessHandler) {
         this.jwtAuthenticationFilter = jwtAuthenticationFilter;
         this.jwtAuthenticationEntryPoint = jwtAuthenticationEntryPoint;
         this.userDetailsService = userDetailsService;
+        this.jwtLogoutHandler = jwtLogoutHandler;
+        this.jwtLogoutSuccessHandler = jwtLogoutSuccessHandler;
     }
 
     @Bean
@@ -81,7 +89,13 @@ public class SecurityConfig {
                 .anyRequest().authenticated()
             )
             .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
-            .logout(AbstractHttpConfigurer::disable);
+            .logout(logout -> logout
+                    .logoutUrl("/logout")
+                    .addLogoutHandler(jwtLogoutHandler)
+                    .logoutSuccessHandler(jwtLogoutSuccessHandler)
+                    .invalidateHttpSession(false)
+                    .clearAuthentication(true)
+            );
         return http.build();
     }
 

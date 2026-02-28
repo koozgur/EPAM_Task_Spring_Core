@@ -34,15 +34,15 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtTokenProvider jwtTokenProvider;
     private final UserDetailsService userDetailsService;
-
-    @Autowired(required = false)
-    private TokenBlacklistService tokenBlacklistService;
+    private final TokenBlacklistService tokenBlacklistService;
 
     @Autowired
     public JwtAuthenticationFilter(JwtTokenProvider jwtTokenProvider,
-                                   UserDetailsService userDetailsService) {
+                                   UserDetailsService userDetailsService,
+                                   TokenBlacklistService tokenBlacklistService) {
         this.jwtTokenProvider = jwtTokenProvider;
         this.userDetailsService = userDetailsService;
+        this.tokenBlacklistService = tokenBlacklistService;
     }
 
     @Override
@@ -55,14 +55,12 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         if (token != null && jwtTokenProvider.validateToken(token)) {
 
-            // check token blacklist (TokenBlacklistService injected when available)
-            if (tokenBlacklistService != null) {
-                String jti = jwtTokenProvider.getJtiFromToken(token);
-                if (tokenBlacklistService.isBlacklisted(jti)) {
-                    logger.debug("Rejected blacklisted JWT jti={}", jti);
-                    filterChain.doFilter(request, response);
-                    return;
-                }
+            // Reject blacklisted tokens (logged-out sessions)
+            String jti = jwtTokenProvider.getJtiFromToken(token);
+            if (tokenBlacklistService.isBlacklisted(jti)) {
+                logger.debug("Rejected blacklisted JWT jti={}", jti);
+                filterChain.doFilter(request, response);
+                return;
             }
 
             String username = jwtTokenProvider.getUsernameFromToken(token);

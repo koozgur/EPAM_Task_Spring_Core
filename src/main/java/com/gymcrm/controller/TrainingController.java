@@ -28,11 +28,11 @@ public class TrainingController {
     }
 
     @PostMapping
-        @Operation(summary = "Add training", description = "Requires HTTP Basic auth. Send credentials via Authorization: Basic <base64(username:password)>." )
+        @Operation(summary = "Add training", description = "Requires Bearer token. Send JWT via Authorization: Bearer <token>.")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "OK"),
             @ApiResponse(responseCode = "400", description = "Validation error"),
-            @ApiResponse(responseCode = "401", description = "Unauthorized — missing or invalid Basic credentials"),
+            @ApiResponse(responseCode = "401", description = "Unauthorized — missing or invalid Bearer token"),
             @ApiResponse(responseCode = "404", description = "Not found")
     })
     public ResponseEntity<Void> addTraining(@Valid @RequestBody AddTrainingRequest req) {

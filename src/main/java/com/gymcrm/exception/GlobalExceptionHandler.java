@@ -8,6 +8,7 @@ import org.slf4j.MDC;
 import org.springframework.context.support.DefaultMessageSourceResolvable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -91,6 +92,24 @@ public class GlobalExceptionHandler {
         return build(
                 HttpStatus.UNAUTHORIZED,
                 ex.getMessage(),
+                request,
+                null
+        );
+    }
+
+    // 403 — Access denied (Spring Security authorization failure)
+    @ExceptionHandler(AccessDeniedException.class)
+    public ResponseEntity<ErrorResponse> handleAccessDenied(
+            AccessDeniedException ex,
+            HttpServletRequest request) {
+
+        logger.warn("[{}] Access denied on {}",
+                MDC.get("transactionId"),
+                request.getRequestURI());
+
+        return build(
+                HttpStatus.FORBIDDEN,
+                "Access denied",
                 request,
                 null
         );

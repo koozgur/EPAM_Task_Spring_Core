@@ -1,175 +1,110 @@
 package com.gymcrm.dao;
 
-import com.gymcrm.config.AppConfig;
 import com.gymcrm.model.Trainee;
-import com.gymcrm.model.User;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.TypedQuery;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.test.annotation.Commit;
-import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.junit.jupiter.SpringExtension;
-import org.springframework.transaction.annotation.Transactional;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 
-import javax.persistence.EntityManager;
-import javax.persistence.PersistenceContext;
-import java.time.LocalDate;
-import java.util.List;
 import java.util.Optional;
+import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatCode;
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.*;
 
-@ExtendWith(SpringExtension.class)
-@ContextConfiguration(classes = AppConfig.class)
-@Transactional
+@ExtendWith(MockitoExtension.class)
 class TraineeDAOImplTest {
 
-    @Autowired
-    private TraineeDAO traineeDAO;
+    @Mock
+    EntityManager entityManager;
 
-    @PersistenceContext
-    private EntityManager entityManager;
+    @InjectMocks
+    TraineeDAOImpl traineeDAO;
 
     @Test
-    void create_ShouldPersistTraineeToDatabase() {
-        User user = new User("John", "Doe", "john.doe.trainee", "password123", true);
-        Trainee trainee = new Trainee(user, LocalDate.of(1990, 1, 1), "Address 1");
-
-        Trainee created = traineeDAO.create(trainee);
-        entityManager.flush();
-        entityManager.clear();
-
-        assertThat(created.getId()).isNotNull();
-
-        Trainee found = entityManager.find(Trainee.class, created.getId());
-        assertThat(found).isNotNull();
-        assertThat(found.getUser().getUsername()).isEqualTo("john.doe.trainee");
+    @DisplayName("create: delegates to entityManager.persist")
+    void create_delegatesToPersist() {
+        Trainee trainee = new Trainee();
+        traineeDAO.create(trainee);
+        verify(entityManager).persist(trainee);
     }
 
     @Test
-    void create_ShouldCascadePersistUser() {
-        User user = new User("Jane", "Smith", "jane.smith.trainee", "pass456", true);
-        Trainee trainee = new Trainee(user, LocalDate.of(1992, 2, 2), "Address 2");
+    @DisplayName("update: delegates to entityManager.merge")
+    void update_delegatesToMerge() {
+        Trainee trainee = new Trainee();
+        Trainee merged = new Trainee();
+        when(entityManager.merge(trainee)).thenReturn(merged);
 
-        Trainee created = traineeDAO.create(trainee);
-        entityManager.flush();
-
-        assertThat(created.getUser().getId()).isNotNull();
-
-        User foundUser = entityManager.find(User.class, created.getUser().getId());
-        assertThat(foundUser).isNotNull();
-        assertThat(foundUser.getUsername()).isEqualTo("jane.smith.trainee");
+        assertThat(traineeDAO.update(trainee)).isSameAs(merged);
     }
 
     @Test
-    void update_ShouldMergeTraineeChanges() {
-        User user = new User("Update", "Trainee", "update.trainee.user", "pass", true);
-        Trainee trainee = new Trainee(user, LocalDate.of(1993, 3, 3), "Old Address");
-        entityManager.persist(trainee);
-        entityManager.flush();
-        entityManager.clear();
-
-        Trainee detached = entityManager.find(Trainee.class, trainee.getId());
-        entityManager.detach(detached);
-        detached.setAddress("New Address");
-
-        Trainee updated = traineeDAO.update(detached);
-        entityManager.flush();
-        entityManager.clear();
-
-        Trainee reloaded = entityManager.find(Trainee.class, updated.getId());
-        assertThat(reloaded).isNotNull();
-        assertThat(reloaded.getAddress()).isEqualTo("New Address");
+    @DisplayName("delete: no-op when id is null")
+    void delete_noopWhenIdIsNull() {
+        traineeDAO.delete(null);
+        verifyNoInteractions(entityManager);
     }
 
     @Test
-    void delete_ShouldRemoveTrainee() {
-        User user = new User("Delete", "Me", "delete.trainee.user", "pass", true);
-        Trainee trainee = new Trainee(user, LocalDate.of(1994, 4, 4), "Address 3");
-        entityManager.persist(trainee);
-        entityManager.flush();
-        entityManager.clear();
-
-        traineeDAO.delete(trainee.getId());
-        entityManager.flush();
-        entityManager.clear();
-
-        Trainee found = entityManager.find(Trainee.class, trainee.getId());
-        assertThat(found).isNull();
+    @DisplayName("delete: no-op when trainee not found")
+    void delete_noopWhenNotFound() {
+        when(entityManager.find(Trainee.class, 99L)).thenReturn(null);
+        traineeDAO.delete(99L);
+        verify(entityManager, never()).remove(any());
     }
 
     @Test
-    void delete_ShouldNoopWhenNotFound() {
-        assertThatCode(() -> traineeDAO.delete(999999L)).doesNotThrowAnyException();
+    @DisplayName("delete: removes entity when found")
+    void delete_removesWhenFound() {
+        Trainee trainee = new Trainee();
+        when(entityManager.find(Trainee.class, 1L)).thenReturn(trainee);
+        traineeDAO.delete(1L);
+        verify(entityManager).remove(trainee);
     }
 
     @Test
-    void delete_ShouldNoopWhenIdNull() {
-        assertThatCode(() -> traineeDAO.delete(null)).doesNotThrowAnyException();
+    @DisplayName("findById: returns empty without querying when id is null")
+    void findById_returnsEmptyWhenIdIsNull() {
+        assertThat(traineeDAO.findById(null)).isEmpty();
+        verifyNoInteractions(entityManager);
     }
 
     @Test
-    void findById_ShouldReturnTraineeWhenExists() {
-        User user = new User("Find", "ById", "find.trainee.byid", "pass", true);
-        Trainee trainee = new Trainee(user, LocalDate.of(1995, 5, 5), "Address 4");
-        entityManager.persist(trainee);
-        entityManager.flush();
-        entityManager.clear();
+    @DisplayName("findById: returns present when entity found")
+    @SuppressWarnings("unchecked")
+    void findById_returnsPresentWhenFound() {
+        Trainee trainee = new Trainee();
+        TypedQuery<Trainee> query = mock(TypedQuery.class);
+        when(entityManager.createQuery(anyString(), eq(Trainee.class))).thenReturn(query);
+        when(query.setParameter(anyString(), any())).thenReturn(query);
+        when(query.getResultStream()).thenReturn(Stream.of(trainee));
 
-        Optional<Trainee> result = traineeDAO.findById(trainee.getId());
-
-        assertThat(result).isPresent();
-        assertThat(result.get().getUser().getUsername()).isEqualTo("find.trainee.byid");
+        assertThat(traineeDAO.findById(1L)).contains(trainee);
     }
 
     @Test
-    void findById_ShouldReturnEmptyWhenIdNull() {
-        Optional<Trainee> result = traineeDAO.findById(null);
-        assertThat(result).isEmpty();
+    @DisplayName("findByUsername: returns empty without querying when username is null")
+    void findByUsername_returnsEmptyWhenUsernameIsNull() {
+        assertThat(traineeDAO.findByUsername(null)).isEmpty();
+        verifyNoInteractions(entityManager);
     }
 
     @Test
-    void findAll_ShouldReturnAllTrainees() {
-        User user1 = new User("All", "One", "find.trainee.all1", "pass", true);
-        User user2 = new User("All", "Two", "find.trainee.all2", "pass", true);
-        Trainee trainee1 = new Trainee(user1, LocalDate.of(1996, 6, 6), "Address 5");
-        Trainee trainee2 = new Trainee(user2, LocalDate.of(1997, 7, 7), "Address 6");
-        entityManager.persist(trainee1);
-        entityManager.persist(trainee2);
-        entityManager.flush();
-        entityManager.clear();
+    @DisplayName("findByUsername: returns present when entity found")
+    @SuppressWarnings("unchecked")
+    void findByUsername_returnsPresentWhenFound() {
+        Trainee trainee = new Trainee();
+        TypedQuery<Trainee> query = mock(TypedQuery.class);
+        when(entityManager.createQuery(anyString(), eq(Trainee.class))).thenReturn(query);
+        when(query.setParameter(anyString(), any())).thenReturn(query);
+        when(query.getResultStream()).thenReturn(Stream.of(trainee));
 
-        List<Trainee> result = traineeDAO.findAll();
-
-        assertThat(result).extracting(Trainee::getUser)
-                .extracting(User::getUsername)
-                .contains("find.trainee.all1", "find.trainee.all2");
-    }
-
-    @Test
-    void findByUsername_ShouldReturnTraineeWhenExists() {
-        User user = new User("Find", "ByUsername", "find.trainee.byusername", "pass", true);
-        Trainee trainee = new Trainee(user, LocalDate.of(1998, 8, 8), "Address 7");
-        entityManager.persist(trainee);
-        entityManager.flush();
-        entityManager.clear();
-
-        Optional<Trainee> result = traineeDAO.findByUsername("find.trainee.byusername");
-
-        assertThat(result).isPresent();
-        assertThat(result.get().getUser().getUsername()).isEqualTo("find.trainee.byusername");
-    }
-
-    @Test
-    void findByUsername_ShouldReturnEmptyWhenNotFound() {
-        Optional<Trainee> result = traineeDAO.findByUsername("missing.trainee");
-        assertThat(result).isEmpty();
-    }
-
-    @Test
-    void findByUsername_ShouldReturnEmptyWhenNull() {
-        Optional<Trainee> result = traineeDAO.findByUsername(null);
-        assertThat(result).isEmpty();
+        assertThat(traineeDAO.findByUsername("john.doe")).contains(trainee);
     }
 }

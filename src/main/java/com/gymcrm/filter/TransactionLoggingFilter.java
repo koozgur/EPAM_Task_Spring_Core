@@ -3,13 +3,12 @@ package com.gymcrm.filter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
-import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
-import javax.servlet.FilterChain;
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.FilterChain;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.UUID;
 
@@ -19,7 +18,6 @@ import java.util.UUID;
  * Stores it in MDC and exposes it via the X-Transaction-Id response header.
  * Ensures MDC cleanup after request completion.
  */
-@Component("transactionLoggingFilter")
 public class TransactionLoggingFilter extends OncePerRequestFilter {
 
     private static final Logger log = LoggerFactory.getLogger(TransactionLoggingFilter.class);

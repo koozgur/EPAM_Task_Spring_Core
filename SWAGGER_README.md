@@ -4,7 +4,7 @@
 
 Once the application is running, access the Swagger UI at:
 ```
-http://localhost:8080/gym-crm/swagger-ui.html
+http://localhost:8080/swagger-ui/index.html
 ```
 
 ## Features
@@ -62,18 +62,18 @@ When you click "Try it out" on any secured endpoint, Swagger UI will prompt for 
 
 #### Public (No Auth Required)
 ```
-POST /gym-crm/trainees/register
-POST /gym-crm/trainers/register
-GET  /gym-crm/swagger-ui.html
+POST /trainees/register
+POST /trainers/register
+GET  /swagger-ui/index.html
 ```
 
 #### After Authentication
 ```
-GET    /gym-crm/trainees/{username}           - Get trainee profile
-PUT    /gym-crm/trainees/{username}           - Update trainee info
-GET    /gym-crm/trainers/{username}           - Get trainer profile
-GET    /gym-crm/training-types                - View all training types
-POST   /gym-crm/trainings                     - Add a training record
+GET    /trainees/{username}           - Get trainee profile
+PUT    /trainees/{username}           - Update trainee info
+GET    /trainers/{username}           - Get trainer profile
+GET    /training-types                - View all training types
+POST   /trainings                     - Add a training record
 ```
 
 ## Common Use Cases
@@ -100,7 +100,7 @@ POST   /gym-crm/trainings                     - Add a training record
 | "401 Unauthorized" | Click Authorize button; re-enter credentials |
 | "404 Not Found" | Check the username/ID exists; verify spelling |
 | "400 Bad Request" | Review required fields; dates must be YYYY-MM-DD format |
-| Swagger UI won't load | Ensure app is running; check `http://localhost:8080/gym-crm` is accessible |
+| Swagger UI won't load | Ensure app is running; check `http://localhost:8080` is accessible |
 | Swagger UI shows 0 endpoints | Wait 5-10 seconds for Spring to initialize; refresh page |
 
 ## Transaction Tracking
@@ -121,7 +121,7 @@ Use this ID to correlate your request with server logs for debugging.
 
 ## Additional Resources
 
-- **OpenAPI Spec**: `http://localhost:8080/gym-crm/v2/api-docs` (raw JSON)
+- **OpenAPI Spec**: `http://localhost:8080/v3/api-docs` (raw JSON)
 - **Application Port**: Default `8080`
-- **Context Path**: `/gym-crm`
+- **Context Path**: `/` (unless `server.servlet.context-path` is explicitly configured)
 - **Server Logs**: Check logback output for `[txId=...]` correlation

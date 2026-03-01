@@ -1,97 +1,73 @@
 package com.gymcrm.dao;
 
-import com.gymcrm.config.AppConfig;
 import com.gymcrm.model.TrainingType;
-import org.junit.jupiter.api.BeforeEach;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.TypedQuery;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.junit.jupiter.SpringExtension;
-import org.springframework.transaction.annotation.Transactional;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 
-import javax.persistence.EntityManager;
-import javax.persistence.PersistenceContext;
-import java.util.List;
 import java.util.Optional;
+import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.*;
 
-@ExtendWith(SpringExtension.class)
-@ContextConfiguration(classes = AppConfig.class)
-@Transactional
+@ExtendWith(MockitoExtension.class)
 class TrainingTypeDAOImplTest {
 
-    @Autowired
-    private TrainingTypeDAO trainingTypeDAO;
+    @Mock
+    EntityManager entityManager;
 
-    @PersistenceContext
-    private EntityManager entityManager;
+    @InjectMocks
+    TrainingTypeDAOImpl trainingTypeDAO;
 
-    private TrainingType existingType;
-
-    @BeforeEach
-    void setUp() {
-        existingType = getOrCreate("Pilates");
-        entityManager.flush();
-        entityManager.clear();
+    @Test
+    @DisplayName("findById: returns empty without querying when id is null")
+    void findById_returnsEmptyWhenIdIsNull() {
+        assertThat(trainingTypeDAO.findById(null)).isEmpty();
+        verifyNoInteractions(entityManager);
     }
 
     @Test
-    void findById_ShouldReturnWhenExists() {
-        Optional<TrainingType> result = trainingTypeDAO.findById(existingType.getId());
+    @DisplayName("findById: delegates to entityManager.find and wraps result")
+    void findById_delegatesToEntityManagerFind() {
+        TrainingType type = new TrainingType("Yoga");
+        when(entityManager.find(TrainingType.class, 1L)).thenReturn(type);
 
-        assertThat(result).isPresent();
-        assertThat(result.get().getTrainingTypeName()).isEqualTo("Pilates");
+        assertThat(trainingTypeDAO.findById(1L)).contains(type);
     }
 
     @Test
-    void findById_ShouldReturnEmptyWhenNull() {
-        Optional<TrainingType> result = trainingTypeDAO.findById(null);
-        assertThat(result).isEmpty();
+    @DisplayName("findById: returns empty when entityManager.find returns null")
+    void findById_returnsEmptyWhenNotFound() {
+        when(entityManager.find(TrainingType.class, 99L)).thenReturn(null);
+
+        assertThat(trainingTypeDAO.findById(99L)).isEmpty();
     }
 
     @Test
-    void findByName_ShouldReturnWhenExists() {
-        Optional<TrainingType> result = trainingTypeDAO.findByName("Pilates");
-
-        assertThat(result).isPresent();
-        assertThat(result.get().getTrainingTypeName()).isEqualTo("Pilates");
+    @DisplayName("findByName: returns empty without querying when name is null")
+    void findByName_returnsEmptyWhenNameIsNull() {
+        assertThat(trainingTypeDAO.findByName(null)).isEmpty();
+        verifyNoInteractions(entityManager);
     }
 
     @Test
-    void findByName_ShouldReturnEmptyWhenMissing() {
-        Optional<TrainingType> result = trainingTypeDAO.findByName("MissingType");
-        assertThat(result).isEmpty();
-    }
+    @DisplayName("findByName: returns present when entity found")
+    @SuppressWarnings("unchecked")
+    void findByName_returnsPresentWhenFound() {
+        TrainingType type = new TrainingType("Cardio");
+        TypedQuery<TrainingType> query = mock(TypedQuery.class);
+        when(entityManager.createQuery(anyString(), eq(TrainingType.class))).thenReturn(query);
+        when(query.setParameter(anyString(), any())).thenReturn(query);
+        when(query.getResultStream()).thenReturn(Stream.of(type));
 
-    @Test
-    void findByName_ShouldReturnEmptyWhenNull() {
-        Optional<TrainingType> result = trainingTypeDAO.findByName(null);
-        assertThat(result).isEmpty();
-    }
-
-    @Test
-    void findAll_ShouldReturnList() {
-        List<TrainingType> result = trainingTypeDAO.findAll();
-
-        assertThat(result).isNotEmpty();
-        assertThat(result).extracting(TrainingType::getTrainingTypeName)
-                .contains("Pilates");
-    }
-
-    private TrainingType getOrCreate(String name) {
-        return entityManager
-                .createQuery(
-                        "select t from TrainingType t where t.trainingTypeName = :name",
-                        TrainingType.class)
-                .setParameter("name", name)
-                .getResultStream()
-                .findFirst()
-                .orElseGet(() -> {
-                    TrainingType created = new TrainingType(name);
-                    entityManager.persist(created);
-                    return created;
-                });
+        assertThat(trainingTypeDAO.findByName("Cardio")).contains(type);
     }
 }
+

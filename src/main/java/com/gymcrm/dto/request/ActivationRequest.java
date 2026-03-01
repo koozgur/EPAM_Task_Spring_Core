@@ -1,6 +1,6 @@
 package com.gymcrm.dto.request;
 
-import javax.validation.constraints.NotNull;
+import jakarta.validation.constraints.NotNull;
 
 /**
  * Username is omitted: the URI path variable identifies the resource.

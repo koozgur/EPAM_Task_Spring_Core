@@ -7,6 +7,7 @@ import com.gymcrm.model.User;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -16,22 +17,23 @@ public class UserServiceImpl implements UserService {
     private static final Logger logger = LoggerFactory.getLogger(UserServiceImpl.class);
 
     private final UserDAO userDAO;
+    private final PasswordEncoder passwordEncoder;
 
     @Autowired
-    public UserServiceImpl(UserDAO userDAO) {
+    public UserServiceImpl(UserDAO userDAO, PasswordEncoder passwordEncoder) {
         this.userDAO = userDAO;
+        this.passwordEncoder = passwordEncoder;
     }
 
     @Override
     @Transactional(readOnly = true)
     public boolean authenticate(String username, String password) {
-        //TODO: will be refactored to use hashed password
         if (username == null || password == null) {
             return false;
         }
         return userDAO.findByUsername(username)
                 .map(user -> {
-                    boolean ok = password.equals(user.getPassword());
+                    boolean ok = passwordEncoder.matches(password, user.getPassword());
                     if (!ok) {
                         logger.warn("Authentication failed for username: {}", username);
                     }
@@ -48,10 +50,10 @@ public class UserServiceImpl implements UserService {
     public void changePassword(String username, String oldPassword, String newPassword) {
         User user = userDAO.findByUsername(username)
                 .orElseThrow(() -> new NotFoundException("User not found: " + username));
-        if (!oldPassword.equals(user.getPassword())) {
+        if (!passwordEncoder.matches(oldPassword, user.getPassword())) {
             throw new AuthenticationException("Old password is incorrect");
         }
-        user.setPassword(newPassword);
+        user.setPassword(passwordEncoder.encode(newPassword));
         logger.info("Password changed for username: {}", username);
     }
 }

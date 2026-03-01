@@ -55,10 +55,10 @@ public class TrainerController {
     }
 
     @GetMapping("/{username}")
-    @Operation(summary = "Get trainer profile", description = "Requires HTTP Basic auth. Send credentials via Authorization: Basic <base64(username:password)>." )
+    @Operation(summary = "Get trainer profile", description = "Requires Bearer token. Send JWT via Authorization: Bearer <token>.")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "OK"),
-            @ApiResponse(responseCode = "401", description = "Unauthorized — missing or invalid Basic credentials"),
+            @ApiResponse(responseCode = "401", description = "Unauthorized — missing or invalid Bearer token"),
             @ApiResponse(responseCode = "404", description = "Not found")
     })
     public ResponseEntity<TrainerProfileResponse> getProfile(
@@ -67,11 +67,11 @@ public class TrainerController {
     }
 
     @PutMapping("/{username}")
-    @Operation(summary = "Update trainer profile", description = "Requires HTTP Basic auth. Send credentials via Authorization: Basic <base64(username:password)>." )
+    @Operation(summary = "Update trainer profile", description = "Requires Bearer token. Send JWT via Authorization: Bearer <token>.")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "OK"),
             @ApiResponse(responseCode = "400", description = "Validation error"),
-            @ApiResponse(responseCode = "401", description = "Unauthorized — missing or invalid Basic credentials"),
+            @ApiResponse(responseCode = "401", description = "Unauthorized — missing or invalid Bearer token"),
             @ApiResponse(responseCode = "404", description = "Not found")
     })
     public ResponseEntity<UpdateTrainerResponse> update(
@@ -81,10 +81,10 @@ public class TrainerController {
     }
 
     @GetMapping("/{username}/trainings")
-    @Operation(summary = "Get trainer trainings", description = "Requires HTTP Basic auth. Send credentials via Authorization: Basic <base64(username:password)>." )
+    @Operation(summary = "Get trainer trainings", description = "Requires Bearer token. Send JWT via Authorization: Bearer <token>.")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "OK"),
-            @ApiResponse(responseCode = "401", description = "Unauthorized — missing or invalid Basic credentials"),
+            @ApiResponse(responseCode = "401", description = "Unauthorized — missing or invalid Bearer token"),
             @ApiResponse(responseCode = "404", description = "Not found")
     })
     public ResponseEntity<List<TrainerTrainingResponse>> getTrainings(
@@ -101,11 +101,11 @@ public class TrainerController {
     }
 
     @PatchMapping("/{username}/activation")
-    @Operation(summary = "Activate/deactivate trainer", description = "Requires HTTP Basic auth. Send credentials via Authorization: Basic <base64(username:password)>." )
+    @Operation(summary = "Activate/deactivate trainer", description = "Requires Bearer token. Send JWT via Authorization: Bearer <token>.")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "OK"),
             @ApiResponse(responseCode = "400", description = "Validation error"),
-            @ApiResponse(responseCode = "401", description = "Unauthorized — missing or invalid Basic credentials"),
+            @ApiResponse(responseCode = "401", description = "Unauthorized — missing or invalid Bearer token"),
             @ApiResponse(responseCode = "409", description = "State conflict")
     })
     public ResponseEntity<Void> setActive(

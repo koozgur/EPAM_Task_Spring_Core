@@ -27,10 +27,10 @@ public class TrainingTypeController {
     }
 
     @GetMapping
-        @Operation(summary = "Get training types", description = "Requires HTTP Basic auth. Send credentials via Authorization: Basic <base64(username:password)>." )
+        @Operation(summary = "Get training types", description = "Requires Bearer token. Send JWT via Authorization: Bearer <token>.")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "OK"),
-            @ApiResponse(responseCode = "401", description = "Unauthorized — missing or invalid Basic credentials")
+            @ApiResponse(responseCode = "401", description = "Unauthorized — missing or invalid Bearer token")
     })
     public ResponseEntity<List<TrainingTypeResponse>> getAllTrainingTypes() {
         return ResponseEntity.ok(facade.getAllTrainingTypes());

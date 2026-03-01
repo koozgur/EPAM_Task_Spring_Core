@@ -10,21 +10,9 @@ public interface TraineeService {
 
     Trainee createTrainee(Trainee trainee);
 
-    /**
-     * Authenticate a trainee by username and password matching.
-     * Must be called before any trainee operation except profile creation.
-     *
-     * @param username the trainee username
-     * @param password the trainee password
-     * @return true if credentials match, false otherwise
-     */
-    boolean authenticate(String username, String password);
-
     Optional<Trainee> getTraineeByUsername(String username);
 
     Trainee updateTrainee(Trainee trainee);
-
-    void changePassword(String username, String oldPassword, String newPassword);
 
     void activateTrainee(String username);
 

@@ -2,7 +2,6 @@ package com.gymcrm.service;
 
 import com.gymcrm.dao.TraineeDAO;
 import com.gymcrm.dao.TrainerDAO;
-import com.gymcrm.exception.AuthenticationException;
 import com.gymcrm.exception.NotFoundException;
 import com.gymcrm.exception.StateConflictException;
 import com.gymcrm.exception.ValidationException;
@@ -13,6 +12,7 @@ import com.gymcrm.util.CredentialsGenerator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -50,6 +50,13 @@ public class TraineeServiceImpl implements TraineeService {
         this.userService = userService;
     }
 
+    @Autowired
+    public void setPasswordEncoder(PasswordEncoder passwordEncoder) {
+        this.passwordEncoder = passwordEncoder;
+    }
+
+    private PasswordEncoder passwordEncoder;
+
     @Override
     @Transactional
     public Trainee createTrainee(Trainee trainee) {
@@ -57,9 +64,10 @@ public class TraineeServiceImpl implements TraineeService {
 
         User user = trainee.getUser();
         String username = credentialsGenerator.generateUsername(user.getFirstName(), user.getLastName());
-        String password = credentialsGenerator.generatePassword();
+        String rawPassword = credentialsGenerator.generatePassword();
         user.setUsername(username);
-        user.setPassword(password);
+        user.setPassword(passwordEncoder.encode(rawPassword));
+        user.setRawPassword(rawPassword);  // transient — returned to caller for RegistrationResponse
         user.setIsActive(true);
 
         return traineeDAO.create(trainee);
@@ -113,37 +121,11 @@ public class TraineeServiceImpl implements TraineeService {
 
     @Override
     @Transactional(readOnly = true)
-    public boolean authenticate(String username, String password) {
-        return userService.authenticate(username, password);
-    }
-
-    @Override
-    @Transactional(readOnly = true)
     public Optional<Trainee> getTraineeByUsername(String username) {
         if (username == null) {
             throw new ValidationException("Username must not be null");
         }
         return traineeDAO.findByUsername(username);
-    }
-
-    @Override
-    @Transactional
-    public void changePassword(String username, String oldPassword, String newPassword) {
-        if (username == null || oldPassword == null || newPassword == null) {
-            throw new ValidationException(
-                "Username, old password, and new password must not be null");
-        }
-
-        Trainee trainee = traineeDAO.findByUsername(username)
-            .orElseThrow(() -> new NotFoundException(
-                "Trainee not found with username: " + username));
-
-        if (!oldPassword.equals(trainee.getUser().getPassword())) {
-            throw new AuthenticationException("Old password does not match");
-        }
-
-        trainee.getUser().setPassword(newPassword);
-        traineeDAO.update(trainee);
     }
 
     @Override

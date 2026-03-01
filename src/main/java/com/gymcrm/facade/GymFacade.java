@@ -27,6 +27,7 @@ import com.gymcrm.model.Trainer;
 import com.gymcrm.model.Training;
 import com.gymcrm.model.TrainingType;
 import com.gymcrm.model.User;
+import com.gymcrm.security.JwtTokenProvider;
 import com.gymcrm.service.TraineeService;
 import com.gymcrm.service.TrainerService;
 import com.gymcrm.service.TrainingService;
@@ -57,6 +58,7 @@ public class GymFacade {
     private final TrainerMapper trainerMapper;
     private final TrainingMapper trainingMapper;
     private final TrainingTypeMapper trainingTypeMapper;
+    private final JwtTokenProvider jwtTokenProvider;
 
     @Autowired
     public GymFacade(TraineeService traineeService,
@@ -67,7 +69,8 @@ public class GymFacade {
                      TraineeMapper traineeMapper,
                      TrainerMapper trainerMapper,
                      TrainingMapper trainingMapper,
-                     TrainingTypeMapper trainingTypeMapper) {
+                     TrainingTypeMapper trainingTypeMapper,
+                     JwtTokenProvider jwtTokenProvider) {
         this.traineeService = traineeService;
         this.trainerService = trainerService;
         this.trainingService = trainingService;
@@ -77,6 +80,7 @@ public class GymFacade {
         this.trainerMapper = trainerMapper;
         this.trainingMapper = trainingMapper;
         this.trainingTypeMapper = trainingTypeMapper;
+        this.jwtTokenProvider = jwtTokenProvider;
     }
 
     @Transactional
@@ -88,9 +92,11 @@ public class GymFacade {
         Trainee trainee = new Trainee(user, req.getDateOfBirth(), req.getAddress());
 
         Trainee created = traineeService.createTrainee(trainee);
+        String token = jwtTokenProvider.generateToken(created.getUser().getUsername());
         return new RegistrationResponse(
                 created.getUser().getUsername(),
-                created.getUser().getPassword());
+                created.getUser().getRawPassword(),
+                token);
     }
 
     @Transactional
@@ -106,9 +112,11 @@ public class GymFacade {
         Trainer trainer = new Trainer(user, specialization);
 
         Trainer created = trainerService.createTrainer(trainer);
+        String token = jwtTokenProvider.generateToken(created.getUser().getUsername());
         return new RegistrationResponse(
                 created.getUser().getUsername(),
-                created.getUser().getPassword());
+                created.getUser().getRawPassword(),
+                token);
     }
 
     @Transactional

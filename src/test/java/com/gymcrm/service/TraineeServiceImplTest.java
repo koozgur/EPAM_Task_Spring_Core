@@ -2,7 +2,6 @@ package com.gymcrm.service;
 
 import com.gymcrm.dao.TraineeDAO;
 import com.gymcrm.dao.TrainerDAO;
-import com.gymcrm.exception.AuthenticationException;
 import com.gymcrm.exception.NotFoundException;
 import com.gymcrm.exception.StateConflictException;
 import com.gymcrm.exception.ValidationException;
@@ -188,44 +187,6 @@ class TraineeServiceImplTest {
 
         assertTrue(result.isPresent());
         assertEquals(testTrainee, result.get());
-    }
-
-    @Test
-    @DisplayName("authenticate: returns true on match")
-    void authenticate_success() {
-        when(userService.authenticate("John.Doe", "password123")).thenReturn(true);
-
-        assertTrue(traineeService.authenticate("John.Doe", "password123"));
-    }
-
-    @Test
-    @DisplayName("authenticate: returns false when user not found")
-    void authenticate_userNotFound() {
-        when(userService.authenticate("ghost", "anyPass")).thenReturn(false);
-
-        assertFalse(traineeService.authenticate("ghost", "anyPass"));
-    }
-
-    @Test
-    @DisplayName("changePassword: updates when old password matches")
-    void changePassword_success() {
-        when(traineeDAO.findByUsername("John.Doe")).thenReturn(Optional.of(testTrainee));
-        when(traineeDAO.update(testTrainee)).thenReturn(testTrainee);
-
-        traineeService.changePassword("John.Doe", "password123", "newPass456");
-
-        assertEquals("newPass456", testTrainee.getUser().getPassword());
-        verify(traineeDAO).update(testTrainee);
-    }
-
-    @Test
-    @DisplayName("changePassword: rejects wrong old password")
-    void changePassword_oldPasswordMismatch() {
-        when(traineeDAO.findByUsername("John.Doe")).thenReturn(Optional.of(testTrainee));
-
-        assertThrows(AuthenticationException.class,
-                () -> traineeService.changePassword("John.Doe", "wrongOld", "newPass"));
-        verify(traineeDAO, never()).update(any());
     }
 
     @Test

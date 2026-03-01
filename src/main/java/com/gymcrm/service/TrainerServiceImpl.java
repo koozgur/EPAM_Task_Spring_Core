@@ -1,7 +1,6 @@
 package com.gymcrm.service;
 
 import com.gymcrm.dao.TrainerDAO;
-import com.gymcrm.exception.AuthenticationException;
 import com.gymcrm.exception.NotFoundException;
 import com.gymcrm.exception.StateConflictException;
 import com.gymcrm.exception.ValidationException;
@@ -11,6 +10,7 @@ import com.gymcrm.util.CredentialsGenerator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -41,6 +41,13 @@ public class TrainerServiceImpl implements TrainerService {
         this.userService = userService;
     }
 
+    @Autowired
+    public void setPasswordEncoder(PasswordEncoder passwordEncoder) {
+        this.passwordEncoder = passwordEncoder;
+    }
+
+    private PasswordEncoder passwordEncoder;
+
     @Override
     @Transactional
     public Trainer createTrainer(Trainer trainer) {
@@ -48,18 +55,13 @@ public class TrainerServiceImpl implements TrainerService {
 
         User user = trainer.getUser();
         String username = credentialsGenerator.generateUsername(user.getFirstName(), user.getLastName());
-        String password = credentialsGenerator.generatePassword();
+        String rawPassword = credentialsGenerator.generatePassword();
         user.setUsername(username);
-        user.setPassword(password);
+        user.setPassword(passwordEncoder.encode(rawPassword));
+        user.setRawPassword(rawPassword);  // transient — returned to caller for RegistrationResponse
         user.setIsActive(true);
 
         return trainerDAO.create(trainer);
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public boolean authenticate(String username, String password) {
-        return userService.authenticate(username, password);
     }
 
     @Override
@@ -90,26 +92,6 @@ public class TrainerServiceImpl implements TrainerService {
         logger.warn("Specialization (Training Type) is read-only, cannot update it");
 
         return trainerDAO.update(existing);
-    }
-
-    @Override
-    @Transactional
-    public void changePassword(String username, String oldPassword, String newPassword) {
-        if (username == null || oldPassword == null || newPassword == null) {
-            throw new ValidationException(
-                "Username, old password, and new password must not be null");
-        }
-
-        Trainer trainer = trainerDAO.findByUsername(username)
-            .orElseThrow(() -> new NotFoundException(
-                "Trainer not found with username: " + username));
-
-        if (!oldPassword.equals(trainer.getUser().getPassword())) {
-            throw new AuthenticationException("Old password does not match");
-        }
-
-        trainer.getUser().setPassword(newPassword);
-        trainerDAO.update(trainer);
     }
 
     @Override

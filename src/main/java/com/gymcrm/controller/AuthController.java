@@ -4,16 +4,13 @@ import com.gymcrm.dto.request.ChangePasswordRequest;
 import com.gymcrm.dto.request.LoginRequest;
 import com.gymcrm.dto.response.LoginResponse;
 import com.gymcrm.facade.GymFacade;
-import com.gymcrm.security.JwtAuthenticationFilter;
 import com.gymcrm.security.JwtTokenProvider;
 import com.gymcrm.security.LoginAttemptService;
-import com.gymcrm.security.TokenBlacklistService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -28,10 +25,9 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
- * Handles login (JWT issuance), logout (token invalidation), and password changes.
+ * Handles login (JWT issuance) and password changes.
  *
  * POST /login           — validates credentials, enforces brute-force lockout, returns a JWT.
- * POST /logout          — invalidates the Bearer token by adding it to the blacklist.
  * PUT  /change-password — changes the authenticated user's password.
  */
 @RestController
@@ -42,19 +38,16 @@ public class AuthController {
     private final AuthenticationManager authenticationManager;
     private final JwtTokenProvider jwtTokenProvider;
     private final LoginAttemptService loginAttemptService;
-    private final TokenBlacklistService tokenBlacklistService;
 
     @Autowired
     public AuthController(GymFacade facade,
                           AuthenticationManager authenticationManager,
                           JwtTokenProvider jwtTokenProvider,
-                          LoginAttemptService loginAttemptService,
-                          TokenBlacklistService tokenBlacklistService) {
+                          LoginAttemptService loginAttemptService) {
         this.facade = facade;
         this.authenticationManager = authenticationManager;
         this.jwtTokenProvider = jwtTokenProvider;
         this.loginAttemptService = loginAttemptService;
-        this.tokenBlacklistService = tokenBlacklistService;
     }
 
     // POST is used because credentials are sent in the request body.
@@ -84,36 +77,6 @@ public class AuthController {
         loginAttemptService.loginSucceeded(req.getUsername());
         String token = jwtTokenProvider.generateToken(req.getUsername());
         return ResponseEntity.ok(new LoginResponse(token, req.getUsername()));
-    }
-
-    @PostMapping("/logout")
-    @SecurityRequirement(name = "bearerAuth")
-    @Operation(
-            summary = "Logout",
-            description = "Invalidates the current JWT token by adding it to the blacklist. " +
-                          "Requires a valid Bearer token in the Authorization header. " +
-                          "After logout, the token cannot be used for subsequent requests. " +
-                          "Returns 200 OK even if the token is missing or invalid (idempotent behavior).")
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "OK — token invalidated (or no valid token was provided)"),
-            @ApiResponse(responseCode = "401", description = "Unauthorized — Bearer token format is invalid")
-    })
-    public ResponseEntity<Void> logout(HttpServletRequest request) {
-        String token = JwtAuthenticationFilter.extractBearerToken(request);
-
-        if (token == null) {
-            return ResponseEntity.ok().build();
-        }
-
-        // Validate token before blacklisting (avoid polluting blacklist with invalid tokens)
-        if (!jwtTokenProvider.validateToken(token)) {
-            return ResponseEntity.ok().build();
-        }
-
-        String jti = jwtTokenProvider.getJtiFromToken(token);
-        tokenBlacklistService.blacklist(jti, jwtTokenProvider.getExpiryFromToken(token));
-
-        return ResponseEntity.ok().build();
     }
 
     @PutMapping("/change-password")

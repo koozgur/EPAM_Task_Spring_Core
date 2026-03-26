@@ -32,6 +32,7 @@ import com.gymcrm.service.TraineeService;
 import com.gymcrm.service.TrainerService;
 import com.gymcrm.service.TrainingService;
 import com.gymcrm.service.UserService;
+import com.gymcrm.service.WorkloadNotificationService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -59,6 +60,7 @@ public class GymFacade {
     private final TrainingMapper trainingMapper;
     private final TrainingTypeMapper trainingTypeMapper;
     private final JwtTokenProvider jwtTokenProvider;
+    private final WorkloadNotificationService workloadNotificationService;
 
     @Autowired
     public GymFacade(TraineeService traineeService,
@@ -70,7 +72,8 @@ public class GymFacade {
                      TrainerMapper trainerMapper,
                      TrainingMapper trainingMapper,
                      TrainingTypeMapper trainingTypeMapper,
-                     JwtTokenProvider jwtTokenProvider) {
+                     JwtTokenProvider jwtTokenProvider,
+                     WorkloadNotificationService workloadNotificationService) {
         this.traineeService = traineeService;
         this.trainerService = trainerService;
         this.trainingService = trainingService;
@@ -81,6 +84,7 @@ public class GymFacade {
         this.trainingMapper = trainingMapper;
         this.trainingTypeMapper = trainingTypeMapper;
         this.jwtTokenProvider = jwtTokenProvider;
+        this.workloadNotificationService = workloadNotificationService;
     }
 
     @Transactional
@@ -146,7 +150,14 @@ public class GymFacade {
 
     @Transactional
     public void deleteTrainee(String username) {
+        // Trainings must be fetched before deletion since cascade removes them from DB
+        Trainee trainee = traineeService.getTraineeByUsername(username)
+                .orElseThrow(() -> new NotFoundException("Trainee not found: " + username));
+        List<Training> trainingsToDelete = trainingService.getTrainingsByTrainee(trainee.getId());
+
         traineeService.deleteTraineeByUsername(username);
+
+        trainingsToDelete.forEach(workloadNotificationService::notifyDelete);
     }
 
     @Transactional(readOnly = true)
@@ -224,7 +235,8 @@ public class GymFacade {
                 req.getDate(),
                 req.getDuration());
 
-        trainingService.createTraining(training);
+        Training created = trainingService.createTraining(training);
+        workloadNotificationService.notifyAdd(created);
     }
 
     @Transactional

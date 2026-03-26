@@ -14,8 +14,9 @@ import java.util.UUID;
 
 /**
  * Outermost filter.
- * Generates a per-request transactionId for log correlation.
- * Stores it in MDC and exposes it via the X-Transaction-Id response header.
+ * Reads X-Transaction-Id from the incoming request for end-to-end log correlation;
+ * generates a fresh UUID when the header is absent.
+ * Stores the ID in MDC and echoes it on the response header.
  * Ensures MDC cleanup after request completion.
  */
 public class TransactionLoggingFilter extends OncePerRequestFilter {
@@ -33,7 +34,10 @@ public class TransactionLoggingFilter extends OncePerRequestFilter {
                                     HttpServletResponse response,
                                     FilterChain chain) throws IOException, ServletException {
 
-        String transactionId = UUID.randomUUID().toString();
+        String incoming = request.getHeader(TRANSACTION_ID_HEADER);
+        String transactionId = (incoming != null && !incoming.isBlank())
+                ? incoming
+                : UUID.randomUUID().toString();
 
         // MDC must be set before the header — downstream writes commit the response stream.
         MDC.put(TRANSACTION_ID_KEY, transactionId);

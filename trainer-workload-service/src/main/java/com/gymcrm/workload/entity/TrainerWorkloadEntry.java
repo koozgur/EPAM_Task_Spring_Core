@@ -17,8 +17,8 @@ import jakarta.persistence.UniqueConstraint;
 @Table(
     name = "trainer_workload",
     uniqueConstraints = @UniqueConstraint(
-        name = "uk_trainer_year_month",
-        columnNames = {"trainer_username", "year", "month"}
+        name = "uk_trainer_training_year_month",
+        columnNames = {"trainer_username", "training_year", "training_month"}
     )
 )
 public class TrainerWorkloadEntry {
@@ -39,10 +39,10 @@ public class TrainerWorkloadEntry {
     @Column(name = "is_active", nullable = false)
     private Boolean isActive;
 
-    @Column(name = "year", nullable = false)
+    @Column(name = "training_year", nullable = false)
     private Integer year;
 
-    @Column(name = "month", nullable = false)
+    @Column(name = "training_month", nullable = false)
     private Integer month;
 
     @Column(name = "total_minutes", nullable = false)

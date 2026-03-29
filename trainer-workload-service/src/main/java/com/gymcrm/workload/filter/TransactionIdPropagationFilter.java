@@ -1,4 +1,4 @@
-package com.gymcrm.filter;
+package com.gymcrm.workload.filter;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -13,20 +13,15 @@ import java.io.IOException;
 import java.util.UUID;
 
 /**
- * Outermost filter.
- * Reads X-Transaction-Id from the incoming request for end-to-end log correlation;
- * generates a fresh UUID when the header is absent.
- * Stores the ID in MDC and echoes it on the response header.
- * Ensures MDC cleanup after request completion.
+ * Reads X-Transaction-Id from the incoming request and puts it in MDC so all
+ * downstream log statements share the same ID as the main service caller.
+ * Falls back to a generated UUID for direct calls. Clears MDC after the request.
  */
-public class TransactionLoggingFilter extends OncePerRequestFilter {
+public class TransactionIdPropagationFilter extends OncePerRequestFilter {
 
-    private static final Logger log = LoggerFactory.getLogger(TransactionLoggingFilter.class);
+    private static final Logger log = LoggerFactory.getLogger(TransactionIdPropagationFilter.class);
 
-    /** MDC key — must match the %X{transactionId} token in logback.xml */
-    static final String TRANSACTION_ID_KEY = "transactionId";
-
-    /** Response header surfaced to API callers for correlation with server logs */
+    static final String TRANSACTION_ID_MDC_KEY = "transactionId";
     private static final String TRANSACTION_ID_HEADER = "X-Transaction-Id";
 
     @Override
@@ -39,16 +34,16 @@ public class TransactionLoggingFilter extends OncePerRequestFilter {
                 ? incoming
                 : UUID.randomUUID().toString();
 
-        // MDC must be set before the header — downstream writes commit the response stream.
-        MDC.put(TRANSACTION_ID_KEY, transactionId);
+        MDC.put(TRANSACTION_ID_MDC_KEY, transactionId);
         response.setHeader(TRANSACTION_ID_HEADER, transactionId);
 
-        log.debug("Request started: {} {}", request.getMethod(), request.getRequestURI());
+        log.debug("Request started: {} {} [propagated={}]",
+                request.getMethod(), request.getRequestURI(), incoming != null);
 
         try {
             chain.doFilter(request, response);
         } finally {
-            MDC.remove(TRANSACTION_ID_KEY); // prevent stale transactionId leaking into the next request
+            MDC.remove(TRANSACTION_ID_MDC_KEY);
         }
     }
 }

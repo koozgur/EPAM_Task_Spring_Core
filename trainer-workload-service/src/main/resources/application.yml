@@ -19,7 +19,7 @@ spring:
       enabled: true
       path: /h2-console
   activemq:
-    broker-url: tcp://localhost:61616
+    broker-url: tcp://localhost:61616   # default; overridden per profile below
 
 eureka:
   client:
@@ -49,11 +49,12 @@ logging:
 
 workload:
   jms:
-    queue-name: trainer.workload.queue          # must match jms.queue.workload in main service
-    dlq-name: DLQ.trainer.workload.queue        # per-destination DLQ set by IndividualDeadLetterStrategy
+    queue-name: trainer.workload.queue     # must match jms.queue.workload in gym-crm
+    dlq-name: DLQ.trainer.workload.queue   # per-destination DLQ via IndividualDeadLetterStrategy
     concurrency: 1-5
 
-# Connects to the embedded TCP broker started by this service's BrokerService bean.
+---
+# Local — connects to the embedded TCP broker started by this service's BrokerService bean.
 # Start this service before gym-crm so the broker is ready when the producer connects.
 spring:
   config:
@@ -62,6 +63,8 @@ spring:
   activemq:
     broker-url: tcp://localhost:61616
 
+---
+# Dev — broker URL and credentials supplied via env vars; fallbacks allowed
 spring:
   config:
     activate:
@@ -71,7 +74,8 @@ spring:
     user: ${ACTIVEMQ_USER:admin}
     password: ${ACTIVEMQ_PASSWORD:admin}
 
-# All three vars are mandatory; no fallback so misconfiguration fails fast at startup.
+---
+# Staging — all three vars are mandatory; no fallback so misconfiguration fails fast at startup.
 spring:
   config:
     activate:
@@ -81,7 +85,8 @@ spring:
     user: ${ACTIVEMQ_USER}
     password: ${ACTIVEMQ_PASSWORD}
 
-# Concurrency reduced to 1-3 to stay within broker connection limits.
+---
+# Production — concurrency reduced to 1-3 to stay within broker connection limits.
 # All ActiveMQ vars are mandatory; no fallback is intentional.
 spring:
   config:

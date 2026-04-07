@@ -85,7 +85,7 @@ public class WorkloadMessageListener {
             }
         } catch (JMSException e) {
             log.warn("Could not read {} JMS property — correlated logging unavailable",
-                    TRANSACTION_ID_JMS_PROPERTY);
+                    TRANSACTION_ID_JMS_PROPERTY, e);
         }
     }
 

@@ -28,7 +28,7 @@ public class JmsConfig {
      *
      * - Uses TEXT messages for readable JSON payloads
      * - Stores type info in "_type" property for deserialization
-     * - Maps "workloadEvent"to {@link TrainerWorkloadRequest}
+     * - Maps "workloadEvent" to {@link TrainerWorkloadRequest}
      *
      * Reuses Spring's {@link ObjectMapper} for consistent serialization
      */
@@ -43,16 +43,14 @@ public class JmsConfig {
     }
 
     /**
-     * JmsTemplate wired with the JSON converter and persistent delivery mode.
+     * JmsTemplate wired with the JSON converter and {@code DeliveryMode.PERSISTENT}.
      *
-     * <p>{@code setDeliveryPersistent(true)} instructs the broker to persist
-     * each message to disk before acknowledging the sending so that workload events
-     * are not lost if the broker restarts between publication and consumption.
+     * <p>Actual durability depends on the broker: the embedded local broker runs with
+     * {@code persistent=false}, so messages are memory-only locally; external brokers
+     * in dev/stg/prod with a persistent store (e.g. KahaDB) will honour the flag.
      *
-     * <p>The {@link ConnectionFactory} injected here is Spring Boot's
-     * autoconfigured {@code CachingConnectionFactory} (wrapping
-     * {@code ActiveMQConnectionFactory}), which pools connections and sessions
-     * for efficient producer-side reuse.
+     * <p>Injects Spring Boot's autoconfigured {@code CachingConnectionFactory} for
+     * connection/session pooling on the producer side.
      */
     @Bean
     public JmsTemplate jmsTemplate(ConnectionFactory connectionFactory,

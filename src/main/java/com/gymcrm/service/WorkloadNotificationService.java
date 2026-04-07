@@ -61,8 +61,8 @@ public class WorkloadNotificationService {
             });
         } catch (JmsException e) {
             /*
-             * The training is already persisted as seperate flow, rolling back is not an option here.
-             * Log the failure to be monitored and investigated.
+            * The training has already been persisted in a separate flow, so rolling back is not an option here. 
+            * Log the failure so it can be monitored and investigated.
              */
             log.error("Failed to publish workload event — workload summary may be stale " +
                       "[trainer={}, action={}]", request.getTrainerUsername(), actionType, e);

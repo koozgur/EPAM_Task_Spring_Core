@@ -7,6 +7,7 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
+import jakarta.persistence.Version;
 
 /**
  * Stores aggregated training minutes per trainer per (year, month).
@@ -47,6 +48,10 @@ public class TrainerWorkloadEntry {
 
     @Column(name = "total_minutes", nullable = false)
     private Integer totalMinutes = 0;
+
+    @Version
+    @Column(name = "row_version", nullable = false)
+    private Long version;
 
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }

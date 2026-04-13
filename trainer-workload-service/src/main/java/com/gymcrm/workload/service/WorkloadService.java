@@ -1,134 +1,123 @@
 package com.gymcrm.workload.service;
 
+import com.gymcrm.workload.document.TrainerWorkloadDocument;
+import com.gymcrm.workload.document.TrainerWorkloadDocument.MonthEntry;
+import com.gymcrm.workload.document.TrainerWorkloadDocument.YearEntry;
 import com.gymcrm.workload.dto.WorkloadRequest;
 import com.gymcrm.workload.dto.WorkloadSummaryResponse;
-import com.gymcrm.workload.entity.TrainerWorkloadEntry;
-import com.gymcrm.workload.repository.TrainerWorkloadRepository;
+import com.gymcrm.workload.repository.TrainerWorkloadDocumentRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
 
 @Service
 public class WorkloadService {
 
     private static final Logger log = LoggerFactory.getLogger(WorkloadService.class);
 
-    private final TrainerWorkloadRepository repository;
+    private final TrainerWorkloadDocumentRepository repository;
 
-    public WorkloadService(TrainerWorkloadRepository repository) {
+    public WorkloadService(TrainerWorkloadDocumentRepository repository) {
         this.repository = repository;
     }
 
-    @Transactional
+    /**
+     * Processes an ADD or DELETE workload event for a trainer.
+     * Finds the trainer's document (or creates one), updates the year/month entry,
+     * and persists the whole document in a single atomic write.
+     *
+     * No @Transactional — MongoDB guarantees atomicity at the single-document level.
+     */
     public void processWorkload(WorkloadRequest req) {
+        String txId = MDC.get("transactionId");
         int year  = req.getTrainingDate().getYear();
         int month = req.getTrainingDate().getMonthValue();
 
-        TrainerWorkloadEntry entry = findOrCreateEntry(req.getTrainerUsername(), year, month);
+        log.info("[WORKLOAD-START] trainer={} action={} txId={}", req.getTrainerUsername(), req.getActionType(), txId);
 
-        entry.setFirstName(req.getFirstName());
-        entry.setLastName(req.getLastName());
-        entry.setIsActive(req.getIsActive());
+        log.debug("[WORKLOAD-LOOKUP] trainer={}", req.getTrainerUsername());
+        TrainerWorkloadDocument doc = repository.findByTrainerUsername(req.getTrainerUsername())
+                .orElseGet(TrainerWorkloadDocument::new);
 
-        applyDelta(entry, req, year, month);
+        updateProfileFields(doc, req);
+        applyDelta(doc, req, year, month, txId);
 
-        repository.save(entry);
+        log.debug("[WORKLOAD-SAVE] trainer={} txId={}", req.getTrainerUsername(), txId);
+        repository.save(doc);
+        log.info("[WORKLOAD-END] trainer={} txId={}", req.getTrainerUsername(), txId);
     }
 
     /**
-     * Returns the nested year → month summary for a trainer.
-     * Returns empty years list if trainer has no recorded trainings.
+     * Returns the nested year → month workload summary for a trainer.
+     * Years and months are sorted ascending.
+     * Returns an empty years list when no document exists yet.
      */
-    @Transactional(readOnly = true)
     public WorkloadSummaryResponse getSummary(String trainerUsername) {
-        List<TrainerWorkloadEntry> entries = repository.findByTrainerUsername(trainerUsername);
+        String txId = MDC.get("transactionId");
+        log.info("[SUMMARY-START] trainer={} txId={}", trainerUsername, txId);
 
-        WorkloadSummaryResponse response = new WorkloadSummaryResponse();
-        response.setTrainerUsername(trainerUsername);
+        WorkloadSummaryResponse response = repository.findByTrainerUsername(trainerUsername)
+                .map(WorkloadMapper::toSummaryResponse)
+                .orElseGet(() -> WorkloadMapper.emptyResponse(trainerUsername));
 
-        if (entries.isEmpty()) {
-            log.warn("No workload entries found for trainer: {}", trainerUsername);
-            response.setYears(Collections.emptyList());
-            return response;
-        }
-
-        populateProfile(response, entries.get(0));
-
-        List<WorkloadSummaryResponse.YearSummary> yearSummaries = entries.stream()
-                .collect(Collectors.groupingBy(TrainerWorkloadEntry::getYear))
-                .entrySet().stream()
-                .sorted(Map.Entry.comparingByKey())
-                .map(this::toYearSummary)
-                .collect(Collectors.toList());
-
-        response.setYears(yearSummaries);
+        log.info("[SUMMARY-END] trainer={} years={} txId={}", trainerUsername, response.getYears().size(), txId);
         return response;
     }
 
-    //helpers
+    /** Refreshes all trainer profile fields from the incoming request, including on a new document. */
+    private void updateProfileFields(TrainerWorkloadDocument doc, WorkloadRequest req) {
+        doc.setTrainerUsername(req.getTrainerUsername());
+        doc.setFirstName(req.getFirstName());
+        doc.setLastName(req.getLastName());
+        doc.setActive(req.getIsActive());
+    }
 
-    private TrainerWorkloadEntry findOrCreateEntry(String username, int year, int month) {
-        return repository
-                .findByTrainerUsernameAndYearAndMonth(username, year, month)
+    /**
+     * Finds (or creates) the year/month subdocument and applies the ADD or DELETE delta.
+     * DELETE is floored at 0 — duration can never go negative.
+     */
+    private void applyDelta(TrainerWorkloadDocument doc, WorkloadRequest req, int year, int month, String txId) {
+        YearEntry  yearEntry  = findOrCreateYear(doc, year);
+        MonthEntry monthEntry = findOrCreateMonth(yearEntry, month);
+
+        int before = monthEntry.getTrainingSummaryDuration();
+        int delta  = req.getTrainingDuration();
+        int after  = req.getActionType() == WorkloadRequest.ActionType.ADD
+                ? before + delta
+                : Math.max(0, before - delta);
+
+        monthEntry.setTrainingSummaryDuration(after);
+        log.debug("[WORKLOAD-DELTA] trainer={} year={} month={} action={} before={} after={} txId={}",
+                req.getTrainerUsername(), year, month, req.getActionType(), before, after, txId);
+    }
+
+    /**
+     * Returns the YearEntry for the given year, creating and adding it to the document if absent.
+     */
+    private YearEntry findOrCreateYear(TrainerWorkloadDocument doc, int year) {
+        return doc.getYears().stream()
+                .filter(y -> y.getYear().equals(year))
+                .findFirst()
                 .orElseGet(() -> {
-                    TrainerWorkloadEntry e = new TrainerWorkloadEntry();
-                    e.setTrainerUsername(username);
-                    e.setYear(year);
-                    e.setMonth(month);
-                    e.setTotalMinutes(0);
-                    return e;
+                    YearEntry newYear = new YearEntry(year);
+                    doc.getYears().add(newYear);
+                    return newYear;
                 });
     }
 
     /**
-     * Adds or subtracts the training duration from the entry's total minutes.
-     * DELETE is floored at 0 — minutes can never go negative.
+     * Returns the MonthEntry for the given month within a year, creating and adding it if absent.
+     * New entries start at 0 so that the first ADD produces the correct total.
      */
-    private void applyDelta(TrainerWorkloadEntry entry, WorkloadRequest req, int year, int month) {
-        int delta = req.getTrainingDuration();
-        if (req.getActionType() == WorkloadRequest.ActionType.ADD) {
-            entry.setTotalMinutes(entry.getTotalMinutes() + delta);
-            log.info("ADD workload: trainer={} year={} month={} +{}min -> {}min total",
-                     req.getTrainerUsername(), year, month, delta, entry.getTotalMinutes());
-        } else {
-            int updated = Math.max(0, entry.getTotalMinutes() - delta);
-            entry.setTotalMinutes(updated);
-            log.info("DELETE workload: trainer={} year={} month={} -{}min -> {}min total",
-                     req.getTrainerUsername(), year, month, delta, updated);
-        }
-    }
-
-    private void populateProfile(WorkloadSummaryResponse response, TrainerWorkloadEntry sample) {
-        response.setFirstName(sample.getFirstName());
-        response.setLastName(sample.getLastName());
-        response.setTrainerStatus(sample.getIsActive());
-    }
-
-    /**
-     * Converts a (year → entries) map entry into a YearSummary,
-     * with months sorted ascending.
-     */
-    private WorkloadSummaryResponse.YearSummary toYearSummary(
-            Map.Entry<Integer, List<TrainerWorkloadEntry>> yearEntry) {
-        List<WorkloadSummaryResponse.MonthSummary> months = yearEntry.getValue().stream()
-                .sorted(Comparator.comparingInt(TrainerWorkloadEntry::getMonth))
-                .map(this::toMonthSummary)
-                .collect(Collectors.toList());
-
-        return new WorkloadSummaryResponse.YearSummary(yearEntry.getKey(), months);
-    }
-
-    /**
-     * Maps a single DB row to a MonthSummary (month number + total minutes).
-     */
-    private WorkloadSummaryResponse.MonthSummary toMonthSummary(TrainerWorkloadEntry e) {
-        return new WorkloadSummaryResponse.MonthSummary(e.getMonth(), e.getTotalMinutes());
+    private MonthEntry findOrCreateMonth(YearEntry yearEntry, int month) {
+        return yearEntry.getMonths().stream()
+                .filter(m -> m.getMonth().equals(month))
+                .findFirst()
+                .orElseGet(() -> {
+                    MonthEntry newMonth = new MonthEntry(month, 0);
+                    yearEntry.getMonths().add(newMonth);
+                    return newMonth;
+                });
     }
 }

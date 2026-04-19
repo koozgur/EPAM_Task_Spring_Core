@@ -1,0 +1,32 @@
+# ── Component Test Profile (Workload Service) ────────────────────
+# Activated by @ActiveProfiles("component-test") in SpringComponentTestConfig.
+# MongoDB URI is injected by Testcontainers via @DynamicPropertySource.
+
+spring:
+  data:
+    mongodb:
+      auto-index-creation: true
+  activemq:
+    broker-url: vm://localhost?broker.persistent=false
+
+# JWT: same secret as main service tests for cross-compatibility
+jwt:
+  secret: test-jwt-secret-key-for-component-tests-min-32-chars
+
+# Eureka: disabled
+eureka:
+  client:
+    enabled: false
+
+# JMS: same queue names as production
+workload:
+  jms:
+    queue-name: trainer.workload.queue
+    dlq-name: DLQ.trainer.workload.queue
+    concurrency: 1-1
+
+# Reduce log noise
+logging:
+  level:
+    com.gymcrm.workload: WARN
+    org.springframework.security: WARN

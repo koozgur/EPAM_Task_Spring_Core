@@ -14,6 +14,7 @@ import com.gymcrm.service.TraineeService;
 import com.gymcrm.service.TrainerService;
 import com.gymcrm.service.TrainingService;
 import com.gymcrm.service.UserService;
+import com.gymcrm.service.WorkloadNotificationService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -45,6 +46,7 @@ class GymFacadeTest {
     @Mock TrainingMapper trainingMapper;
     @Mock TrainingTypeMapper trainingTypeMapper;
     @Mock JwtTokenProvider jwtTokenProvider;
+    @Mock WorkloadNotificationService workloadNotificationService;
 
     @InjectMocks
     GymFacade facade;
@@ -176,7 +178,13 @@ class GymFacadeTest {
     @Test
     @DisplayName("deleteTrainee delegates to traineeService")
     void deleteTrainee_delegatesToService() {
+        Trainee trainee = new Trainee(new User(), null, null);
+        trainee.setId(1L);
+        when(traineeService.getTraineeByUsername("john.doe1")).thenReturn(Optional.of(trainee));
+        when(trainingService.getTrainingsByTrainee(1L)).thenReturn(List.of());
+
         facade.deleteTrainee("john.doe1");
+
         verify(traineeService).deleteTraineeByUsername("john.doe1");
     }
 
@@ -311,6 +319,7 @@ class GymFacadeTest {
 
         when(traineeService.getTraineeByUsername("john.doe1")).thenReturn(Optional.of(trainee));
         when(trainerService.getTrainerByUsername("jane.smith1")).thenReturn(Optional.of(trainer));
+        when(trainingService.createTraining(any())).thenAnswer(inv -> inv.getArgument(0));
 
         AddTrainingRequest req = new AddTrainingRequest();
         req.setTraineeUsername("john.doe1");
@@ -323,6 +332,7 @@ class GymFacadeTest {
 
         ArgumentCaptor<Training> captor = ArgumentCaptor.forClass(Training.class);
         verify(trainingService).createTraining(captor.capture());
+        verify(workloadNotificationService).notifyAdd(any(Training.class));
         Training saved = captor.getValue();
         assertThat(saved.getTrainingType()).isSameAs(yoga);
         assertThat(saved.getTrainingName()).isEqualTo("Morning Yoga");

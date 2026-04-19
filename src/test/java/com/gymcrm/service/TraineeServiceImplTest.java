@@ -9,6 +9,7 @@ import com.gymcrm.model.Trainee;
 import com.gymcrm.model.Trainer;
 import com.gymcrm.model.User;
 import com.gymcrm.util.CredentialsGenerator;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -40,6 +41,9 @@ class TraineeServiceImplTest {
 
     @Mock
     private UserService userService;
+
+    @Mock
+    private PasswordEncoder passwordEncoder;
 
     @InjectMocks
     private TraineeServiceImpl traineeService;
@@ -75,6 +79,7 @@ class TraineeServiceImplTest {
 
         when(credentialsGenerator.generateUsername("Jane", "Smith")).thenReturn("Jane.Smith");
         when(credentialsGenerator.generatePassword()).thenReturn("randomPass10");
+        when(passwordEncoder.encode("randomPass10")).thenReturn("encodedPass");
         when(traineeDAO.create(any(Trainee.class))).thenAnswer(inv -> {
             Trainee t = inv.getArgument(0);
             t.setId(2L);
@@ -86,7 +91,8 @@ class TraineeServiceImplTest {
         assertNotNull(result);
         assertEquals(2L, result.getId());
         assertEquals("Jane.Smith", result.getUser().getUsername());
-        assertEquals("randomPass10", result.getUser().getPassword());
+        assertEquals("encodedPass", result.getUser().getPassword());
+        assertEquals("randomPass10", result.getUser().getRawPassword());
         assertTrue(result.getUser().getIsActive());
         verify(credentialsGenerator).generateUsername("Jane", "Smith");
         verify(credentialsGenerator).generatePassword();

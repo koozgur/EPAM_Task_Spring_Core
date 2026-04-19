@@ -10,12 +10,11 @@ import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
 /**
- * Cucumber-Spring glue: boots the workload service against a disposable
- * Testcontainers MongoDB instance and an in-memory ActiveMQ broker.
+ * Boots the Spring Boot test context for workload component tests.
  *
- * <p>The container is static and shared across all scenarios.
- * Scenario isolation is handled by dropping the MongoDB collection
- * in a {@code @Before} hook.
+ * Uses a shared Testcontainers MongoDB instance and in-memory ActiveMQ.
+ * Database state is cleared before each scenario for isolation.
+ * Runtime properties are injected via DynamicPropertySource.
  */
 @CucumberContextConfiguration
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)

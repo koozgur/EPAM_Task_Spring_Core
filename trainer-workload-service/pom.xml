@@ -188,4 +188,44 @@
             </plugin>
         </plugins>
     </build>
+
+    <profiles>
+        <!-- Run only Cucumber component tests: mvn test -P component-test -->
+        <profile>
+            <id>component-test</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-surefire-plugin</artifactId>
+                        <configuration>
+                            <excludes combine.self="override"/>
+                            <includes>
+                                <include>**/CucumberComponentTest.java</include>
+                            </includes>
+                            <systemPropertyVariables>
+                                <cucumber.filter.tags>@component</cucumber.filter.tags>
+                            </systemPropertyVariables>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+
+        <!-- Run everything (unit + component): mvn test -P all-tests -->
+        <profile>
+            <id>all-tests</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-surefire-plugin</artifactId>
+                        <configuration>
+                            <excludes combine.self="override"/>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
 </project>

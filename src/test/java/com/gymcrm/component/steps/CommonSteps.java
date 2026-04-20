@@ -141,4 +141,18 @@ public class CommonSteps {
         String username = testContext.getResponse().jsonPath().getString("username");
         assertThat(username, is(equalTo(testContext.getCurrentUsername())));
     }
+
+    @Then("the response should contain a generated username and password and token")
+    public void verifyRegistrationFields() {
+        Response response = testContext.getResponse();
+        assertThat(response.jsonPath().getString("username"), not(emptyOrNullString()));
+        assertThat(response.jsonPath().getString("password"), not(emptyOrNullString()));
+        assertThat(response.jsonPath().getString("token"), not(emptyOrNullString()));
+    }
+
+    @Then("the response should contain a generated username starting with {string}")
+    public void verifyUsernameStartsWith(String prefix) {
+        String username = testContext.getResponse().jsonPath().getString("username");
+        assertThat(username, startsWith(prefix));
+    }
 }

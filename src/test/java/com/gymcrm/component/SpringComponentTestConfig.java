@@ -6,27 +6,31 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.testcontainers.containers.PostgreSQLContainer;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
 
 /**
  * Boots the Spring Boot test context for Cucumber component tests.
  *
- * Uses a shared Testcontainers PostgreSQL instance and in-memory ActiveMQ,
- * with runtime properties overridden via DynamicPropertySource.
- * Database state is reset before each scenario for isolation. (DatabaseCleaner)
+ * <p>Uses a shared Testcontainers PostgreSQL instance and in-memory ActiveMQ,
+ * with runtime properties overridden via {@link DynamicPropertySource}.
+ * Database state is reset before each scenario for isolation (see DatabaseCleaner).
  */
 @CucumberContextConfiguration
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @ActiveProfiles("component-test")
-@Testcontainers
 public class SpringComponentTestConfig {
 
-    @Container
-    static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:15-alpine")
+    // Cucumber runs on its own JUnit Platform engine, not Jupiter, so the
+    // @Testcontainers/@Container lifecycle does not fire. Start the container
+    // manually in a static initializer; the JVM reuses it across all scenarios
+    // and shuts it down on JVM exit via Testcontainers' Ryuk reaper.
+    static final PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:15-alpine")
             .withDatabaseName("gymcrm_test")
             .withUsername("test")
             .withPassword("test");
+
+    static {
+        postgres.start();
+    }
 
     @DynamicPropertySource
     static void configureProperties(DynamicPropertyRegistry registry) {

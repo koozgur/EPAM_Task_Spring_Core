@@ -5,12 +5,14 @@ import com.gymcrm.component.support.TestContext;
 import io.cucumber.java.Before;
 import io.cucumber.java.en.Given;
 import io.cucumber.java.en.Then;
+import io.cucumber.java.en.When;
 import io.restassured.RestAssured;
 import io.restassured.http.ContentType;
 import io.restassured.response.Response;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.web.server.LocalServerPort;
 
+import java.util.List;
 import java.util.Map;
 
 import static io.restassured.RestAssured.given;
@@ -115,6 +117,32 @@ public class CommonSteps {
         }
     }
 
+    @Given("the trainer is authenticated")
+    public void trainerIsAuthenticated() {
+        String token = testContext.get("trainerToken");
+        if (token == null) {
+            Response response = given()
+                    .contentType(ContentType.JSON)
+                    .body(Map.of(
+                            "username", (String) testContext.get("trainerUsername"),
+                            "password", (String) testContext.get("trainerPassword")))
+                    .post("/login");
+            assertThat(response.statusCode(), is(200));
+            testContext.put("trainerToken", response.jsonPath().getString("token"));
+        }
+    }
+
+    @Given("the trainer is assigned to the trainee")
+    public void assignTrainerToTrainee() {
+        String trainerUsername = testContext.get("trainerUsername");
+        Response response = given()
+                .header("Authorization", "Bearer " + testContext.getJwtToken())
+                .contentType(ContentType.JSON)
+                .body(Map.of("trainerUsernames", List.of(trainerUsername)))
+                .when().put("/trainees/" + testContext.getCurrentUsername() + "/trainers");
+        assertThat(response.statusCode(), is(200));
+    }
+
     //Response assertions
 
     @Then("the response status should be {int}")
@@ -154,5 +182,23 @@ public class CommonSteps {
     public void verifyUsernameStartsWith(String prefix) {
         String username = testContext.getResponse().jsonPath().getString("username");
         assertThat(username, startsWith(prefix));
+    }
+
+    @Then("the response should contain field {string} with value {string}")
+    public void verifyFieldValue(String fieldName, String expectedValue) {
+        String value = testContext.getResponse().jsonPath().getString(fieldName);
+        assertThat(value, is(equalTo(expectedValue)));
+    }
+
+    @Then("the response should be a non-empty list")
+    public void verifyNonEmptyList() {
+        List<?> list = testContext.getResponse().jsonPath().getList("$");
+        assertThat(list, is(not(empty())));
+    }
+
+    @Then("the response should be an empty list")
+    public void verifyEmptyList() {
+        List<?> list = testContext.getResponse().jsonPath().getList("$");
+        assertThat(list, is(empty()));
     }
 }

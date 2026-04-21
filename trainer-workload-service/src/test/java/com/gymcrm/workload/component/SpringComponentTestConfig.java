@@ -6,24 +6,28 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.testcontainers.containers.MongoDBContainer;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
 
 /**
  * Boots the Spring Boot test context for workload component tests.
  *
- * Uses a shared Testcontainers MongoDB instance and in-memory ActiveMQ.
+ * <p>Uses a shared Testcontainers MongoDB instance and in-memory ActiveMQ,
+ * with runtime properties overridden via {@link DynamicPropertySource}.
  * Database state is cleared before each scenario for isolation.
- * Runtime properties are injected via DynamicPropertySource.
  */
 @CucumberContextConfiguration
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @ActiveProfiles("component-test")
-@Testcontainers
 public class SpringComponentTestConfig {
 
-    @Container
-    static MongoDBContainer mongo = new MongoDBContainer("mongo:7.0");
+    // Cucumber runs on its own JUnit Platform engine, not Jupiter, so the
+    // @Testcontainers/@Container lifecycle does not fire. Start the container
+    // manually in a static initializer; the JVM reuses it across all scenarios
+    // and shuts it down on JVM exit via Testcontainers' Ryuk reaper.
+    static final MongoDBContainer mongo = new MongoDBContainer("mongo:7.0");
+
+    static {
+        mongo.start();
+    }
 
     @DynamicPropertySource
     static void configureProperties(DynamicPropertyRegistry registry) {

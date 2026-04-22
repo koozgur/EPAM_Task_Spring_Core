@@ -1,6 +1,8 @@
 package com.gymcrm.workload.component;
 
+import com.gymcrm.workload.component.support.HttpStatusExceptionUnwrappingFilter;
 import io.cucumber.spring.CucumberContextConfiguration;
+import io.restassured.RestAssured;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.DynamicPropertyRegistry;
@@ -27,6 +29,10 @@ public class SpringComponentTestConfig {
 
     static {
         mongo.start();
+        // REST-assured 5.4.0 only installs its failure handler for POST, so
+        // non-POST 4xx/5xx responses can escape as HttpResponseException. This filter
+        // converts that exception back into a Response for uniform assertions.
+        RestAssured.filters(new HttpStatusExceptionUnwrappingFilter());
     }
 
     @DynamicPropertySource

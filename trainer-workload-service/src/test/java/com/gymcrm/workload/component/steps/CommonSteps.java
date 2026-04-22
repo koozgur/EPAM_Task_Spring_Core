@@ -48,6 +48,11 @@ public class CommonSteps {
         testContext.setJwtToken(jwtTestHelper.generateValidToken("test.user"));
     }
 
+    @Given("an expired JWT token")
+    public void expiredJwtToken() {
+        testContext.setJwtToken(jwtTestHelper.generateExpiredToken("test.user"));
+    }
+
     //Response assertions
 
     @Then("the response status should be {int}")

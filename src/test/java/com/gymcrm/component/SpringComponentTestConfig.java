@@ -1,5 +1,6 @@
 package com.gymcrm.component;
 
+import com.gymcrm.GymCrmApplication;
 import com.gymcrm.component.support.HttpStatusExceptionUnwrappingFilter;
 import io.cucumber.spring.CucumberContextConfiguration;
 import io.restassured.RestAssured;
@@ -18,7 +19,7 @@ import org.testcontainers.containers.PostgreSQLContainer;
  */
 @CucumberContextConfiguration
 @SpringBootTest(
-        classes = MainServiceComponentApplication.class,
+    classes = GymCrmApplication.class,
         webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT
 )
 @ActiveProfiles("component-test")

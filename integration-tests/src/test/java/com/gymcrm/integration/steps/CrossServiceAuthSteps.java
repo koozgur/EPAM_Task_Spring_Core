@@ -9,12 +9,12 @@ import org.springframework.beans.factory.annotation.Autowired;
 import static io.restassured.RestAssured.given;
 
 /**
- * Steps that verify a JWT minted by the main service is accepted (or properly
- * rejected) by the workload service — the two services share a JWT secret.
+ * Cucumber steps for verifying JWT-based authentication between services.
  *
- * <p>The target endpoint is GET {@code /api/workload/{trainerUsername}}. The
- * subject of the JWT does not need to match the path parameter: the workload
- * service only asserts that the token is present and valid.
+ * <p>Targets the workload endpoint ({@code /api/workload/{trainerUsername}})
+ * using valid, invalid, and missing tokens. The workload service validates only
+ * token presence and integrity; the JWT subject is not required to match the
+ * path parameter.
  */
 public class CrossServiceAuthSteps {
 

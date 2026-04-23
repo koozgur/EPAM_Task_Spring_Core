@@ -13,16 +13,17 @@ import java.lang.reflect.Field;
 import java.util.Map;
 
 /**
- * Resets cross-scenario state between Cucumber integration scenarios:
+ * Resets shared state between Cucumber scenarios.
+ *
+ * <p>Performs:
  * <ul>
- *   <li>Truncates main-service JPA tables (FK-safe order, preserving {@code training_types})</li>
- *   <li>Drops the workload-service {@code trainer_workload} collection</li>
- *   <li>Clears the in-memory brute-force counter</li>
+ *   <li>JPA cleanup (FK-safe order, keeps {@code training_types})</li>
+ *   <li>Workload MongoDB reset</li>
+ *   <li>Login attempt counter reset</li>
  * </ul>
  *
- * <p>The workload {@link MongoTemplate} is fetched from the workload child context
- * (started in {@link SpringIntegrationTestConfig}) rather than autowired, since
- * that bean lives in a different Spring context.
+ * <p>The workload {@link MongoTemplate} is retrieved from the workload context
+ * since it is not part of the main Spring context.
  */
 @Component
 public class IntegrationTestCleaner {
@@ -55,8 +56,7 @@ public class IntegrationTestCleaner {
         mongoTemplate.getDb().drop();
     }
 
-    // LoginAttemptService keeps counters in a private in-memory map with no
-    // public reset hook; reflection clears it without widening the prod API.
+    // Clear in-memory login attempt counters via reflection (no public reset API).
     private void clearLoginAttempts() {
         try {
             Field field = LoginAttemptService.class.getDeclaredField("attempts");

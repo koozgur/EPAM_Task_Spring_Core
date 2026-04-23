@@ -190,6 +190,15 @@
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
+                <configuration>
+                    <!--
+                      Publish the plain JAR as the main artifact so it can be
+                      consumed as a Maven dependency (e.g. main service's
+                      integration tests boot TrainerWorkloadApplication in-process).
+                      The runnable fat JAR is installed with classifier "exec".
+                    -->
+                    <classifier>exec</classifier>
+                </configuration>
             </plugin>
         </plugins>
     </build>

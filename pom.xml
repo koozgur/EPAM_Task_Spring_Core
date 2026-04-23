@@ -175,6 +175,26 @@
             <artifactId>postgresql</artifactId>
             <scope>test</scope>
         </dependency>
+        <!-- MongoDB container for integration tests -->
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>mongodb</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <!--
+          Workload service on test classpath — integration tests boot TrainerWorkloadApplication alongside GymCrmApplication in-process.
+          Kept at main dep scope (not profile-scoped) so every profile can compile the integration test sources. Component tests defend against
+          bean collisions via an explicit @ComponentScan filter on their test-only @SpringBootApplication entry point.
+          Requires a prior `mvn install -DskipTests` in trainer-workload-service/.
+        -->
+        <dependency>
+            <groupId>com.gymcrm</groupId>
+            <artifactId>trainer-workload-service</artifactId>
+            <version>1.0-SNAPSHOT</version>
+            <scope>test</scope>
+        </dependency>
+
 
         <!-- REST-assured -->
         <dependency>
@@ -276,6 +296,8 @@
                             <systemPropertyVariables>
                                 <cucumber.filter.tags>@integration</cucumber.filter.tags>
                             </systemPropertyVariables>
+                            <!-- Same locale lockdown as surefire  -->
+                            <argLine>-Duser.language=en -Duser.country=US</argLine>
                         </configuration>
                     </plugin>
                 </plugins>
@@ -311,6 +333,8 @@
                             <includes>
                                 <include>**/CucumberIntegrationTest.java</include>
                             </includes>
+                            <!-- Same locale lockdown as the integration-test -->
+                            <argLine>-Duser.language=en -Duser.country=US</argLine>
                         </configuration>
                     </plugin>
                 </plugins>

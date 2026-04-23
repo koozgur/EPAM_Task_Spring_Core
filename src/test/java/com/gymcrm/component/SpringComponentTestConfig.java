@@ -17,7 +17,10 @@ import org.testcontainers.containers.PostgreSQLContainer;
  * Database state is reset before each scenario for isolation (see DatabaseCleaner).
  */
 @CucumberContextConfiguration
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@SpringBootTest(
+        classes = MainServiceComponentApplication.class,
+        webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT
+)
 @ActiveProfiles("component-test")
 public class SpringComponentTestConfig {
 

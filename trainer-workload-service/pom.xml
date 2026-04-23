@@ -20,6 +20,8 @@
     <properties>
         <java.version>17</java.version>
         <spring-cloud.version>2023.0.3</spring-cloud.version>
+        <cucumber.version>7.15.0</cucumber.version>
+        <testcontainers.version>1.21.4</testcontainers.version>
     </properties>
 
     <dependencyManagement>
@@ -28,6 +30,13 @@
                 <groupId>org.springframework.cloud</groupId>
                 <artifactId>spring-cloud-dependencies</artifactId>
                 <version>${spring-cloud.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.testcontainers</groupId>
+                <artifactId>testcontainers-bom</artifactId>
+                <version>${testcontainers.version}</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
@@ -108,14 +117,129 @@
             <artifactId>spring-security-test</artifactId>
             <scope>test</scope>
         </dependency>
+
+        <!-- Cucumber BDD -->
+        <dependency>
+            <groupId>io.cucumber</groupId>
+            <artifactId>cucumber-java</artifactId>
+            <version>${cucumber.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.cucumber</groupId>
+            <artifactId>cucumber-spring</artifactId>
+            <version>${cucumber.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.cucumber</groupId>
+            <artifactId>cucumber-junit-platform-engine</artifactId>
+            <version>${cucumber.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.platform</groupId>
+            <artifactId>junit-platform-suite</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <!-- Testcontainers -->
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>mongodb</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <!-- REST-assured -->
+        <dependency>
+            <groupId>io.rest-assured</groupId>
+            <artifactId>rest-assured</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <!-- Awaitility for async assertions -->
+        <dependency>
+            <groupId>org.awaitility</groupId>
+            <artifactId>awaitility</artifactId>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <build>
         <plugins>
             <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <configuration>
+                    <excludes>
+                        <exclude>**/component/**</exclude>
+                        <exclude>**/integration/**</exclude>
+                    </excludes>
+                    <!-- Force English locale for the test JVM. REST-assured 5.4.0's
+                         internal Status.toString() uses locale-dependent toLowerCase(),
+                         which under Turkish locale produces a dotless-i and breaks the
+                         response-handler map key alignment for non-POST 4xx/5xx. -->
+                    <argLine>-Duser.language=en -Duser.country=US</argLine>
+                </configuration>
+            </plugin>
+            <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
+                <configuration>
+                    <!--
+                      Publish the plain JAR as the main artifact so it can be
+                      consumed as a Maven dependency (e.g. main service's
+                      integration tests boot TrainerWorkloadApplication in-process).
+                      The runnable fat JAR is installed with classifier "exec".
+                    -->
+                    <classifier>exec</classifier>
+                </configuration>
             </plugin>
         </plugins>
     </build>
+
+    <profiles>
+        <!-- Run only Cucumber component tests: mvn test -P component-test -->
+        <profile>
+            <id>component-test</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-surefire-plugin</artifactId>
+                        <configuration>
+                            <excludes combine.self="override"/>
+                            <includes>
+                                <include>**/CucumberComponentTest.java</include>
+                            </includes>
+                            <systemPropertyVariables>
+                                <cucumber.filter.tags>@component</cucumber.filter.tags>
+                            </systemPropertyVariables>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+
+        <!-- Run everything (unit + component): mvn test -P all-tests -->
+        <profile>
+            <id>all-tests</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-surefire-plugin</artifactId>
+                        <configuration>
+                            <excludes combine.self="override"/>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
 </project>

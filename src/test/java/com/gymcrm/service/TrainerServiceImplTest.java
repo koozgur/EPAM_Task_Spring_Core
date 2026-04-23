@@ -8,6 +8,7 @@ import com.gymcrm.model.Trainer;
 import com.gymcrm.model.TrainingType;
 import com.gymcrm.model.User;
 import com.gymcrm.util.CredentialsGenerator;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -35,6 +36,9 @@ class TrainerServiceImplTest {
 
     @Mock
     private UserService userService;
+
+    @Mock
+    private PasswordEncoder passwordEncoder;
 
     @InjectMocks
     private TrainerServiceImpl trainerService;
@@ -73,6 +77,7 @@ class TrainerServiceImplTest {
 
         when(credentialsGenerator.generateUsername("Sarah", "Fit")).thenReturn("Sarah.Fit");
         when(credentialsGenerator.generatePassword()).thenReturn("randomPass10");
+        when(passwordEncoder.encode("randomPass10")).thenReturn("encodedPass");
         when(trainerDAO.create(any(Trainer.class))).thenAnswer(inv -> {
             Trainer t = inv.getArgument(0);
             t.setId(2L);
@@ -84,7 +89,8 @@ class TrainerServiceImplTest {
         assertNotNull(result);
         assertEquals(2L, result.getId());
         assertEquals("Sarah.Fit", result.getUser().getUsername());
-        assertEquals("randomPass10", result.getUser().getPassword());
+        assertEquals("encodedPass", result.getUser().getPassword());
+        assertEquals("randomPass10", result.getUser().getRawPassword());
         assertTrue(result.getUser().getIsActive());
         verify(credentialsGenerator).generateUsername("Sarah", "Fit");
         verify(credentialsGenerator).generatePassword();

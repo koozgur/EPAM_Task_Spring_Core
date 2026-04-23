@@ -29,10 +29,6 @@ public class SpringComponentTestConfig {
 
     static {
         mongo.start();
-        // REST-assured 5.4.0 only installs its failure handler for POST, so
-        // non-POST 4xx/5xx responses can escape as HttpResponseException. This filter
-        // converts that exception back into a Response for uniform assertions.
-        // RestAssured.filters(new HttpStatusExceptionUnwrappingFilter());
     }
 
     @DynamicPropertySource

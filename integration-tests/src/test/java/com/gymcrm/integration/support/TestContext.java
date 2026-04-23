@@ -8,16 +8,12 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Scenario-scoped state shared between step definitions in a single Cucumber scenario.
+ * Scenario-scoped state shared across Cucumber steps.
  *
- * <p>A fresh instance is created per scenario, so steps can safely stash trainee/
- * trainer identities, JWT tokens, the latest REST-assured response, etc. without
- * leaking state across scenarios.
+ * <p>Stores per-scenario data (e.g., credentials, JWT, responses) without
+ * leaking state between scenarios.
+ * Explicit bean name avoids collision with another TestContext bean on the test classpath.
  */
-// Bean name is explicit because com.gymcrm.component.support.TestContext exists
-// in the same test-classes root; without a rename both classes would register
-// as "testContext" and the component-test Spring context would fail on
-// ConflictingBeanDefinitionException when it inadvertently scans this package.
 @Component("integrationTestContext")
 @ScenarioScope
 public class TestContext {

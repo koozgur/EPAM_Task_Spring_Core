@@ -12,27 +12,21 @@ import org.testcontainers.containers.MongoDBContainer;
 import org.testcontainers.containers.PostgreSQLContainer;
 
 /**
- * Boots the Spring context for end-to-end Cucumber integration tests.
+ * Spring context configuration for end-to-end Cucumber tests.
  *
- * <p>Starts three things in a single static initializer so they are live before
- * any Spring context loads:
+ * <p>Starts required dependencies before context initialization:
  * <ul>
- *   <li>PostgreSQL Testcontainer — main service JPA store</li>
- *   <li>MongoDB Testcontainer — workload service document store</li>
- *   <li>{@link TrainerWorkloadApplication} via {@link SpringApplicationBuilder} on a random port</li>
+ *   <li>PostgreSQL (JPA store)</li>
+ *   <li>MongoDB (workload service store)</li>
+ *   <li>{@link TrainerWorkloadApplication} on a random port</li>
  * </ul>
  *
- * <p>The main service is booted here as a standard {@code @SpringBootTest}.
- * Both services share a single in-JVM ActiveMQ broker via {@code vm://localhost}:
- * the first {@code ConnectionFactory} to connect auto-starts the broker, and
- * subsequent connections (from either service) reuse it. No ActiveMQ Testcontainer
- * is needed because both services run in the same JVM — the plan originally
- * called for one, but vm:// is strictly simpler and equally representative of
- * the JMS contract.
+ * <p>The main service runs via {@code @SpringBootTest}, while both services
+ * share an in-JVM ActiveMQ broker ({@code vm://localhost}), avoiding the need
+ * for a dedicated container.
  *
- * <p>{@link MainServiceIntegrationApplication} is used instead of
- * {@code GymCrmApplication} to keep the workload-service classes (also on the
- * test classpath) out of the main context's component scan.
+ * <p>{@link MainServiceIntegrationApplication} is used to restrict component
+ * scanning and prevent workload-service classes from leaking into the main context.
  */
 @CucumberContextConfiguration
 @SpringBootTest(
@@ -69,9 +63,8 @@ public class SpringIntegrationTestConfig {
         postgres.start();
         mongo.start();
         startWorkloadService();
-        // Shut the workload context down when the JVM exits. Testcontainers' Ryuk
-        // reaper handles the containers; the workload Spring context needs an
-        // explicit hook because nothing else knows it exists.
+        // Ensure workload Spring context shuts down on JVM exit. 
+        // Testcontainers handles container lifecycle separately.
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
             if (workloadContext != null && workloadContext.isActive()) {
                 workloadContext.close();
@@ -81,8 +74,7 @@ public class SpringIntegrationTestConfig {
 
     private static void startWorkloadService() {
         workloadContext = new SpringApplicationBuilder(TrainerWorkloadApplication.class)
-                // Args have higher precedence than any property file, so workload's
-                // own application.yml + main's application.properties can't leak in.
+                // Command-line args override config files, isolating workload configuration.
                 .run(
                         "--server.port=0",
                         "--spring.application.name=trainer-workload-service",
@@ -97,9 +89,7 @@ public class SpringIntegrationTestConfig {
                         "--workload.jms.concurrency=1-1",
                         "--logging.level.com.gymcrm.workload=WARN",
                         "--logging.level.org.apache.activemq=WARN",
-                        // Main's test classpath pulls in spring-boot-starter-data-jpa +
-                        // postgresql-driver; in the same JVM, the workload context
-                        // would try to bootstrap a JDBC DataSource it doesn't need.
+                        // Prevent unintended JDBC/JPA auto-configuration in the workload context due to shared test classpath dependencies.
                         "--spring.autoconfigure.exclude="
                                 + "org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration,"
                                 + "org.springframework.boot.autoconfigure.jdbc.DataSourceTransactionManagerAutoConfiguration,"

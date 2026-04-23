@@ -6,16 +6,12 @@ import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Component;
 
 /**
- * Exposes both services' listening ports to step definitions.
+ * Provides access to the runtime ports of both services.
  *
- * <p>The main service's {@code local.server.port} is only published after the
- * web server starts at the end of context refresh, so {@code @Value} / {@code @LocalServerPort}
- * on a singleton field fails (resolved too early). Reading from {@link Environment}
- * at call time defers the lookup until the first step asks for the port, by which
- * time the server is listening.
+ * <p>The main service port is resolved lazily from {@link Environment}, as
+ * {@code local.server.port} becomes available only after server startup.
  *
- * <p>The workload port is captured during its {@link
- * org.springframework.boot.builder.SpringApplicationBuilder#run} call in
+ * <p>The workload service port is initialized during startup in
  * {@link SpringIntegrationTestConfig} and exposed via a static accessor.
  */
 @Component

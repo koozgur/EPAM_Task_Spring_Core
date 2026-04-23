@@ -175,27 +175,6 @@
             <artifactId>postgresql</artifactId>
             <scope>test</scope>
         </dependency>
-        <!-- MongoDB container for integration tests -->
-        <dependency>
-            <groupId>org.testcontainers</groupId>
-            <artifactId>mongodb</artifactId>
-            <scope>test</scope>
-        </dependency>
-
-        <!--
-          Workload service on test classpath — integration tests boot TrainerWorkloadApplication alongside GymCrmApplication in-process.
-          Kept at main dep scope (not profile-scoped) so every profile can compile the integration test sources. Component tests defend against
-          bean collisions via an explicit @ComponentScan filter on their test-only @SpringBootApplication entry point.
-          Requires a prior `mvn install -DskipTests` in trainer-workload-service/.
-        -->
-        <dependency>
-            <groupId>com.gymcrm</groupId>
-            <artifactId>trainer-workload-service</artifactId>
-            <version>1.0-SNAPSHOT</version>
-            <scope>test</scope>
-        </dependency>
-
-
         <!-- REST-assured -->
         <dependency>
             <groupId>io.rest-assured</groupId>
@@ -242,6 +221,21 @@
                 </configuration>
             </plugin>
             <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-jar-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>attach-plain-jar</id>
+                        <goals>
+                            <goal>jar</goal>
+                        </goals>
+                        <configuration>
+                            <classifier>plain</classifier>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
             </plugin>
@@ -273,37 +267,6 @@
             </build>
         </profile>
 
-        <!-- Run only Cucumber integration tests: mvn verify -P integration-test -->
-        <profile>
-            <id>integration-test</id>
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-failsafe-plugin</artifactId>
-                        <executions>
-                            <execution>
-                                <goals>
-                                    <goal>integration-test</goal>
-                                    <goal>verify</goal>
-                                </goals>
-                            </execution>
-                        </executions>
-                        <configuration>
-                            <includes>
-                                <include>**/CucumberIntegrationTest.java</include>
-                            </includes>
-                            <systemPropertyVariables>
-                                <cucumber.filter.tags>@integration</cucumber.filter.tags>
-                            </systemPropertyVariables>
-                            <!-- Same locale lockdown as surefire  -->
-                            <argLine>-Duser.language=en -Duser.country=US</argLine>
-                        </configuration>
-                    </plugin>
-                </plugins>
-            </build>
-        </profile>
-
         <!-- Run everything: mvn verify -P all-tests -->
         <profile>
             <id>all-tests</id>
@@ -314,27 +277,7 @@
                         <artifactId>maven-surefire-plugin</artifactId>
                         <configuration>
                             <excludes combine.self="override">
-                                <exclude>**/integration/**</exclude>
                             </excludes>
-                        </configuration>
-                    </plugin>
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-failsafe-plugin</artifactId>
-                        <executions>
-                            <execution>
-                                <goals>
-                                    <goal>integration-test</goal>
-                                    <goal>verify</goal>
-                                </goals>
-                            </execution>
-                        </executions>
-                        <configuration>
-                            <includes>
-                                <include>**/CucumberIntegrationTest.java</include>
-                            </includes>
-                            <!-- Same locale lockdown as the integration-test -->
-                            <argLine>-Duser.language=en -Duser.country=US</argLine>
                         </configuration>
                     </plugin>
                 </plugins>

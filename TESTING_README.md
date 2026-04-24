@@ -40,10 +40,17 @@ Runs workload unit/component tests and installs artifact to local Maven repo.
 
 ## Integration Tests (dedicated module)
 
-Run from `integration-tests`:
+Both service artifacts must be installed in the local Maven repo first:
 
 ```bash
-mvn clean verify
+mvn -f trainer-workload-service/pom.xml clean install -P all-tests
+mvn -f pom.xml clean install
+```
+
+Then run from `integration-tests`:
+
+```bash
+mvn -f integration-tests/pom.xml clean verify
 ```
 
 Runs Cucumber integration tests (main service + workload service together).
@@ -54,13 +61,15 @@ From repository root, use this order so dependencies are fresh:
 
 ```powershell
 mvn -f trainer-workload-service/pom.xml clean install -P all-tests
-mvn -f pom.xml clean test
+mvn -f pom.xml clean install
 mvn -f pom.xml test -P component-test
 mvn -f integration-tests/pom.xml clean verify
 ```
 
+The `install` step for the main service is required so the `gym-crm:plain` artifact is available in the local Maven repo when the `integration-tests` module resolves its dependency.
+
 ## One-line Command (PowerShell)
 
 ```powershell
-mvn -f trainer-workload-service/pom.xml clean install -P all-tests; mvn -f pom.xml clean test; mvn -f pom.xml test -P component-test; mvn -f integration-tests/pom.xml clean verify
+mvn -f trainer-workload-service/pom.xml clean install -P all-tests; mvn -f pom.xml clean install; mvn -f pom.xml test -P component-test; mvn -f integration-tests/pom.xml clean verify
 ```
